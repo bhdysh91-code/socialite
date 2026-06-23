@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}هولوغرام 3D{% endblock %}
+
+{% block content %}
+<div style="padding:12px;text-align:center;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:20px;border:1px solid #2D2D44;">
+        <h2 style="margin-bottom:16px;color:#8B5CF6;">🌀 هولوغرام ثلاثي الأبعاد</h2>
+        <p style="color:#A0A0B0;margin-bottom:20px;">حرك هاتفك لترى التأثير ثلاثي الأبعاد</p>
+        
+        <!-- حاوية الهولوغرام -->
+        <div id="hologram-container" style="width:100%;height:400px;background:#0F0F1A;border-radius:12px;position:relative;overflow:hidden;border:1px solid #2D2D44;">
+            <canvas id="hologramCanvas" style="width:100%;height:100%;"></canvas>
+            
+            <!-- تأثيرات الهولوغرام -->
+            <div id="hologramGlow" style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at center, rgba(139,92,246,0.1) 0%, transparent 70%);"></div>
+            <div id="hologramLines" style="position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(139,92,246,0.05) 0px, rgba(139,92,246,0.05) 2px, transparent 2px, transparent 10px);"></div>
+        </div>
+        
+        <!-- معلومات المنشور -->
+        <div style="margin-top:16px;padding:12px;background:#2D2D44;border-radius:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <img src="{{ post.author.avatar }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                <div style="text-align:right;">
+                    <div style="font-weight:600;">{{ post.author.full_name }}</div>
+                    <div style="font-size:12px;color:#A0A0B0;">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+            </div>
+            <div style="margin-top:8px;font-size:14px;color:#fff;">{{ post.text }}</div>
+        </div>
+        
+        <button onclick="window.location.href='{{ url_for('pages.index') }}'" style="margin-top:12px;padding:10px 24px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">
+            <i class="fas fa-arrow-right"></i> العودة
+        </button>
+    </div>
+</div>
+
+<script>
+    // ================================================================
+    // ✅ هولوغرام 3D باستخدام Canvas
+    // ================================================================
+    
+    const canvas = document.getElementById('hologramCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let rotation = 0;
+    let particles = [];
+    const postText = "{{ post.text }}";
+    const words = postText.split(' ');
+    
+    // ================================================================
+    // تهيئة الجسيمات
+    // ================================================================
+    function initParticles() {
+        particles = [];
+        for (let i = 0; i < 150; i++) {
+            particles.push({
+                x: Math.random() * 2 - 1,
+                y: Math.random() * 2 - 1,
+                z: Math.random() * 2 - 1,
+                size: Math.random() * 3 + 1,
+                speed: Math.random() * 0.02 + 0.01,
+                color: `hsl(${Math.random() * 60 + 250}, 80%, 60%)`
+            });
+        }
+    }
+    
+    // ================================================================
+    // رسم الهولوغرام
+    // ================================================================
+    function drawHologram() {
+        width = canvas.parentElement.clientWidth;
+        height = canvas.parentElement.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // مركز الشاشة
+        const cx = width / 2;
+        const cy = height / 2;
+        const scale = Math.min(width, height) / 3;
+        
+        // ✅ رسم الجسيمات (نجوم متطايرة)
+        particles.forEach(p => {
+            // دوران ثلاثي الأبعاد
+            const angle = rotation * p.speed;
+            const x = p.x * Math.cos(angle) - p.z * Math.sin(angle);
+            const z = p.x * Math.sin(angle) + p.z * Math.cos(angle);
+            const y = p.y;
+            
+            // إسقاط 2D
+            const perspective = 800 / (800 + z * 100);
+            const px = cx + x * scale * perspective;
+            const py = cy + y * scale * perspective;
+            const size = p.size * perspective;
+            const alpha = (z + 1) / 2 * 0.8 + 0.2;
+            
+            ctx.beginPath();
+            ctx.arc(px, py, size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = alpha * 0.6;
+            ctx.fill();
+            
+            // ✅ تأثير التوهج
+            if (size > 2) {
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 20;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        });
+        
+        // ✅ رسم النص ثلاثي الأبعاد
+        words.forEach((word, index) => {
+            const depth = index * 8;
+            const rotAngle = rotation * 0.5 + index * 0.2;
+            const textScale = 1 + Math.sin(rotation + index) * 0.1;
+            
+            const x = cx + Math.sin(rotAngle) * depth * 0.5;
+            const y = cy + Math.cos(rotAngle * 0.7) * depth * 0.3 - 20;
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(textScale, textScale);
+            ctx.rotate(rotAngle * 0.1);
+            
+            // ✅ تأثير توهج النص
+            ctx.shadowColor = '#8B5CF6';
+            ctx.shadowBlur = 30;
+            
+            ctx.font = `bold ${24 + Math.sin(rotation + index) * 4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // تدرج لوني
+            const gradient = ctx.createLinearGradient(-50, -20, 50, 20);
+            gradient.addColorStop(0, `hsl(${250 + index * 10}, 80%, 60%)`);
+            gradient.addColorStop(0.5, `hsl(${280 + index * 10}, 80%, 70%)`);
+            gradient.addColorStop(1, `hsl(${310 + index * 10}, 80%, 60%)`);
+            ctx.fillStyle = gradient;
+            ctx.globalAlpha = 0.7 + Math.sin(rotation + index) * 0.2;
+            
+            ctx.fillText(word, 0, 0);
+            
+            // ✅ تأثير الهولوغرام (خطوط)
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeText(word, 0, 0);
+            
+            ctx.restore();
+        });
+        
+        // ✅ خطوط شبكية (تأثير الهولوغرام)
+        ctx.strokeStyle = 'rgba(139, 92, 246, 0.05)';
+        ctx.lineWidth = 1;
+        for (let i = -3; i <= 3; i++) {
+            const x = cx + i * 60;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+        for (let i = -3; i <= 3; i++) {
+            const y = cy + i * 60;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+        
+        // ✅ تحديث الدوران
+        rotation += 0.02;
+        requestAnimationFrame(drawHologram);
+    }
+    
+    // ================================================================
+    // الاستجابة لتغيير حجم الشاشة
+    // ================================================================
+    window.addEventListener('resize', () => {
+        // سيتم تحديث الحجم تلقائياً في الدورة
+    });
+    
+    // ================================================================
+    // استخدام Gyroscope للتحكم (للأجهزة المحمولة)
+    // ================================================================
+    if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', (event) => {
+            const beta = event.beta || 0;  // -180 إلى 180
+            const gamma = event.gamma || 0; // -90 إلى 90
+            // يمكن استخدام هذه القيم للتحكم في زاوية العرض
+        });
+    }
+    
+    // ================================================================
+    // بدء الهولوغرام
+    // ================================================================
+    initParticles();
+    drawHologram();
+    
+    console.log('🌀 هولوغرام 3D يعمل!');
+</script>
+
+<style>
+    #hologram-container {
+        transition: all 0.3s ease;
+    }
+    #hologram-container:hover {
+        border-color: #8B5CF6;
+        box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+    }
+</style>
+{% endblock %}

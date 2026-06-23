@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المستخدمين{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2>👥 إدارة المستخدمين ({{ users|length }})</h2>
+            <a href="{{ url_for('admin.dashboard') }}" style="color:#8B5CF6;text-decoration:none;">← العودة</a>
+        </div>
+        
+        {% for u in users %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #2D2D44;flex-wrap:wrap;">
+            <img src="{{ u.avatar }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+            <div style="flex:1;min-width:120px;">
+                <div style="font-weight:600;">{{ u.full_name }}</div>
+                <div style="font-size:12px;color:#A0A0B0;">@{{ u.username }}</div>
+            </div>
+            <div style="font-size:12px;color:#A0A0B0;min-width:80px;">
+                {% if u.online %}🟢 متصل{% else %}🔴 غير متصل{% endif %}
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                {% if not u.is_admin %}
+                <button onclick="toggleBan({{ u.id }})" id="banBtn-{{ u.id }}" style="padding:4px 12px;border-radius:12px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:{% if u.is_banned %}#10B981{% else %}#EF4444{% endif %};color:white;">
+                    {% if u.is_banned %}🚫 الغاء حظر{% else %}🚫 حظر{% endif %}
+                </button>
+                <button onclick="toggleVerify({{ u.id }})" id="verifyBtn-{{ u.id }}" style="padding:4px 12px;border-radius:12px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:{% if u.verified %}#10B981{% else %}#F59E0B{% endif %};color:white;">
+                    {% if u.verified %}✅ موثق{% else %}⭐ توثيق{% endif %}
+                </button>
+                {% else %}
+                <span style="font-size:12px;color:#8B5CF6;">👑 مدير</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    }
+
+    async function toggleBan(userId) {
+        try {
+            const res = await fetch(`/admin/users/${userId}/toggle-ban`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                setTimeout(() => location.reload(), 1000);
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    async function toggleVerify(userId) {
+        try {
+            const res = await fetch(`/admin/users/${userId}/toggle-verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                setTimeout(() => location.reload(), 1000);
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - Socialite</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#0F0F1A;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;direction:rtl}
+        .auth-box{background:#1A1A2E;border-radius:16px;padding:40px 32px;max-width:400px;width:100%;border:1px solid #3D3D5C}
+        .logo{text-align:center;font-size:36px;font-weight:900;background:linear-gradient(135deg,#8B5CF6,#EC4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+        .subtitle{text-align:center;color:#A0A0B0;margin-bottom:24px}
+        .form-group input{width:100%;padding:14px 18px;border:1px solid #3D3D5C;border-radius:10px;background:#2D2D44;color:#fff;font-size:15px;margin-bottom:12px}
+        .form-group input:focus{border-color:#8B5CF6;outline:none}
+        .btn-primary{width:100%;padding:14px;background:linear-gradient(135deg,#8B5CF6,#EC4899);color:#fff;border:none;border-radius:10px;font-size:17px;font-weight:700;cursor:pointer}
+        .btn-primary:hover{transform:translateY(-2px)}
+        .error{background:#2D1A1A;color:#EF4444;padding:10px;border-radius:8px;margin-bottom:12px;text-align:center}
+        .link{text-align:center;margin-top:16px;color:#A0A0B0}
+        .link a{color:#8B5CF6;text-decoration:none}
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <div class="logo">Socialite</div>
+        <div class="subtitle">تسجيل الدخول إلى حسابك</div>
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="form-group">
+                <input type="text" name="username" placeholder="اسم المستخدم" required>
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" placeholder="كلمة المرور" required>
+            </div>
+            <button type="submit" class="btn-primary">تسجيل الدخول</button>
+            <div style="text-align:center;margin-top:12px;">
+    <a href="{{ url_for('auth.forgot_password') }}" style="color:#8B5CF6;text-decoration:none;">🔑 نسيت كلمة المرور؟</a>
+</div>
+        </form>
+        <div class="link">ليس لديك حساب؟ <a href="{{ url_for('auth.register') }}">إنشاء حساب</a></div>
+    </div>
+</body>
+</html>

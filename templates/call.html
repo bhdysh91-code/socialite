@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مكالمة - Socialite</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#0F0F1A;color:white;direction:rtl;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+        .call-container{text-align:center;width:100%;max-width:400px}
+        .call-container .avatar{width:120px;height:120px;border-radius:50%;object-fit:cover;border:4px solid #8B5CF6;margin:0 auto;display:block}
+        .call-container .name{font-size:28px;font-weight:700;margin-top:16px}
+        .call-container .status{font-size:16px;color:#A0A0B0;margin-top:4px}
+        .call-container .status.ringing{color:#F59E0B}
+        .call-container .status.active{color:#10B981}
+        .call-container .timer{font-size:20px;color:#A0A0B0;margin-top:20px;font-family:monospace}
+        .call-actions{display:flex;gap:20px;margin-top:40px;justify-content:center;flex-wrap:wrap}
+        .call-actions button{width:70px;height:70px;border-radius:50%;border:none;font-size:28px;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;justify-content:center}
+        .call-actions button:hover{transform:scale(1.05)}
+        .call-actions button:active{transform:scale(0.95)}
+        .call-actions .end{background:#EF4444;color:white}
+        .call-actions .mute{background:#2D2D44;color:white}
+        .call-actions .mute.active{background:#EF4444}
+        #localVideo{position:fixed;bottom:100px;right:20px;width:150px;height:200px;border-radius:12px;object-fit:cover;border:2px solid #8B5CF6;background:#000;z-index:10;display:none}
+        #remoteVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:1}
+        .back-btn{position:fixed;top:20px;right:20px;color:white;font-size:24px;background:rgba(0,0,0,0.5);border:none;border-radius:50%;width:50px;height:50px;cursor:pointer;z-index:20;transition:all 0.3s ease}
+        .back-btn:hover{background:rgba(255,255,255,0.2)}
+        .toast{position:fixed;bottom:200px;left:50%;transform:translateX(-50%) translateY(100px);background:#1A1A2E;color:white;padding:12px 24px;border-radius:30px;font-size:14px;border:1px solid #2D2D44;opacity:0;transition:all 0.3s;z-index:30;pointer-events:none}
+        .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+        .loading-screen{position:fixed;inset:0;background:#0F0F1A;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+        .loading-screen .spinner{width:50px;height:50px;border:4px solid #2D2D44;border-top-color:#8B5CF6;border-radius:50%;animation:spin 1s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loading-screen p{margin-top:16px;color:#A0A0B0}
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="spinner"></div>
+        <p id="loadingText">📞 جاري تجهيز المكالمة...</p>
+    </div>
+
+    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay playsinline muted></video>
+    
+    <button class="back-btn" onclick="endCall()"><i class="fas fa-times"></i></button>
+    
+    <div class="call-container">
+        <img src="{{ other_user.avatar }}" class="avatar" alt="{{ other_user.full_name }}" id="avatar">
+        <div class="name">{{ other_user.full_name }}</div>
+        <div class="status ringing" id="statusText">📞 جاري الاتصال...</div>
+        <div class="timer" id="timer">00:00</div>
+        <div class="call-actions">
+            <button class="mute" onclick="toggleMute()" id="muteBtn"><i class="fas fa-microphone"></i></button>
+            <button class="end" onclick="endCall()"><i class="fas fa-phone-slash"></i></button>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // ================================================================
+        // ✅ إعدادات
+        // ================================================================
+        const callType = '{{ call_type }}';
+        const isCaller = {{ 'true' if is_caller else 'false' }};
+        const callId = {{ call.id }};
+        const otherUserId = {{ other_user.id }};
+        const currentUserId = {{ user.id }};
+        
+        let localStream = null;
+        let peerConnection = null;
+        let timerInterval = null;
+        let seconds = 0;
+        let isMuted = false;
+        let callActive = false;
+        let statusInterval = null;
+        let offerCheckInterval = null;
+        let answerCheckInterval = null;
+        let iceCheckInterval = null;
+        
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+        
+        // ================================================================
+        // ✅ دوال مساعدة
+        // ================================================================
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timeout);
+            t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+        
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                seconds++;
+                const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+                const secs = String(seconds % 60).padStart(2, '0');
+                document.getElementById('timer').textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+        
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+        
+        // ================================================================
+        // ✅ تهيئة WebRTC (محاولة الصوت فقط أولاً)
+        // ================================================================
+        async function initWebRTC() {
+            try {
+                document.getElementById('loadingScreen').style.display = 'none';
+                
+                // ✅ طلب الصوت فقط أولاً (أسهل)
+                const constraints = {
+                    audio: true,
+                    video: false  // نبدأ بالصوت فقط لتجنب الأخطاء
+                };
+                
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // ✅ إذا كان فيديو، نحاول إضافة الفيديو
+                if (callType === 'video') {
+                    try {
+                        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        const videoTrack = videoStream.getVideoTracks()[0];
+                        if (videoTrack) {
+                            localStream.addTrack(videoTrack);
+                            document.getElementById('localVideo').srcObject = localStream;
+                            document.getElementById('localVideo').style.display = 'block';
+                        }
+                    } catch(e) {
+                        console.log('Video not available, audio only');
+                        document.getElementById('loadingText').textContent = '🎙️ مكالمة صوتية (الفيديو غير متاح)';
+                    }
+                }
+                
+                // ✅ إنشاء اتصال WebRTC
+                peerConnection = new RTCPeerConnection(configuration);
+                
+                // ✅ إضافة التدفق المحلي
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+                
+                // ✅ استقبال التدفق البعيد
+                peerConnection.ontrack = (event) => {
+                    document.getElementById('remoteVideo').srcObject = event.streams[0];
+                };
+                
+                // ✅ إرسال ICE candidates
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        fetch(`/calls/api/${callId}/ice`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ candidate: event.candidate })
+                        }).catch(err => console.error('Error sending ICE:', err));
+                    }
+                };
+                
+                // ✅ حالة الاتصال
+                peerConnection.onconnectionstatechange = () => {
+                    console.log('Connection state:', peerConnection.connectionState);
+                    if (peerConnection.connectionState === 'connected') {
+                        document.getElementById('statusText').textContent = '🔵 المكالمة قيد التشغيل';
+                        document.getElementById('statusText').className = 'status active';
+                        startTimer();
+                        showToast('📞 بدأت المكالمة');
+                    }
+                };
+                
+                // ✅ إذا كان المتصل، أرسل العرض
+                if (isCaller) {
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                    
+                    await fetch(`/calls/api/${callId}/offer`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ offer: offer })
+                    });
+                    
+                    document.getElementById('statusText').textContent = '📞 جاري الاتصال...';
+                    document.getElementById('statusText').className = 'status ringing';
+                }
+                
+                callActive = true;
+                document.getElementById('loadingScreen').style.display = 'none';
+                
+            } catch(e) {
+                console.error('Error in initWebRTC:', e);
+                document.getElementById('loadingScreen').style.display = 'none';
+                showToast('❌ لا يمكن الوصول إلى الميكروفون');
+            }
+        }
+        
+        // ================================================================
+        // ✅ استقبال الـ Offer و الـ Answer
+        // ================================================================
+        async function checkOffer() {
+            try {
+                const res = await fetch(`/calls/api/${callId}/get_offer`);
+                const data = await res.json();
+                
+                if (data.offer && peerConnection && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    
+                    await fetch(`/calls/api/${callId}/answer`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ answer: answer })
+                    });
+                    console.log('✅ Answer sent');
+                }
+            } catch(e) {
+                console.error('Error checking offer:', e);
+            }
+        }
+        
+        async function checkAnswer() {
+            try {
+                const res = await fetch(`/calls/api/${callId}/get_answer`);
+                const data = await res.json();
+                
+                if (data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    console.log('✅ Answer received');
+                }
+            } catch(e) {
+                console.error('Error checking answer:', e);
+            }
+        }
+        
+        async function checkIce() {
+            try {
+                const res = await fetch(`/calls/api/${callId}/get_ice`);
+                const data = await res.json();
+                
+                if (data.candidates && peerConnection) {
+                    for (const candidate of data.candidates) {
+                        try {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                        } catch(e) {}
+                    }
+                }
+            } catch(e) {
+                console.error('Error checking ICE:', e);
+            }
+        }
+        
+        // ================================================================
+        // ✅ أزرار المكالمة
+        // ================================================================
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('muteBtn');
+            if (localStream) {
+                localStream.getAudioTracks().forEach(track => {
+                    track.enabled = !isMuted;
+                });
+            }
+            if (isMuted) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                showToast('🔇 مكتوم');
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fas fa-microphone"></i>';
+                showToast('🎤 غير مكتوم');
+            }
+        }
+        
+        function endCall() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            stopTimer();
+            callActive = false;
+            
+            if (statusInterval) clearInterval(statusInterval);
+            if (offerCheckInterval) clearInterval(offerCheckInterval);
+            if (answerCheckInterval) clearInterval(answerCheckInterval);
+            if (iceCheckInterval) clearInterval(iceCheckInterval);
+            
+            document.getElementById('statusText').textContent = '📞 تم إنهاء المكالمة';
+            document.getElementById('statusText').className = 'status';
+            showToast('📞 تم إنهاء المكالمة');
+            
+            fetch(`/calls/api/${callId}/end`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(err => console.error('Error ending call:', err));
+            
+            setTimeout(() => {
+                window.location.href = "{{ url_for('pages.index') }}";
+            }, 1500);
+        }
+        
+        // ================================================================
+        // ✅ بدء المكالمة
+        // ================================================================
+        async function startCall() {
+            if (!isCaller) {
+                // ✅ المستلم ينتظر قبول المتصل
+                document.getElementById('statusText').textContent = '📞 جاري الاتصال...';
+                document.getElementById('statusText').className = 'status ringing';
+                
+                statusInterval = setInterval(() => {
+                    fetch(`/calls/api/${callId}/status`)
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log('Call status:', data.status);
+                        if (data.status === 'active') {
+                            clearInterval(statusInterval);
+                            // ✅ بدء WebRTC للمستلم
+                            initWebRTC();
+                            offerCheckInterval = setInterval(checkOffer, 1000);
+                            answerCheckInterval = setInterval(checkAnswer, 1000);
+                            iceCheckInterval = setInterval(checkIce, 1000);
+                        } else if (data.status === 'ended' || data.status === 'rejected') {
+                            clearInterval(statusInterval);
+                            document.getElementById('loadingScreen').style.display = 'none';
+                            showToast('📞 تم إنهاء المكالمة');
+                            setTimeout(() => {
+                                window.location.href = "{{ url_for('pages.index') }}";
+                            }, 1500);
+                        }
+                    })
+                    .catch(err => console.error('Error checking call status:', err));
+                }, 1000);
+            } else {
+                // ✅ المتصل يبدأ مباشرة
+                await initWebRTC();
+                answerCheckInterval = setInterval(checkAnswer, 1000);
+                iceCheckInterval = setInterval(checkIce, 1000);
+            }
+        }
+        
+        // ================================================================
+        // ✅ بدء التطبيق
+        // ================================================================
+        startCall();
+        
+        window.addEventListener('beforeunload', function() {
+            if (statusInterval) clearInterval(statusInterval);
+            if (offerCheckInterval) clearInterval(offerCheckInterval);
+            if (answerCheckInterval) clearInterval(answerCheckInterval);
+            if (iceCheckInterval) clearInterval(iceCheckInterval);
+            if (callActive) endCall();
+        });
+    </script>
+</body>
+</html>

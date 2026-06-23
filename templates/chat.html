@@ -1,0 +1,687 @@
+{% extends "base.html" %}
+
+{% block title %}الدردشة{% endblock %}
+
+{% block content %}
+<div style="height:calc(100vh - 100px);display:flex;flex-direction:column;padding:0;margin:-12px;background:#0F0F1A;">
+    <!-- رأس المحادثة -->
+    <div style="padding:12px;background:#1A1A2E;border-bottom:1px solid #2D2D44;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+        <img src="{{ other_user.avatar }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+        <div>
+            <div style="font-weight:600;">{{ other_user.full_name }}</div>
+            <div style="font-size:12px;color:#A0A0B0;" id="onlineStatus">
+                {% if other_user.online %}🟢 متصل{% else %}🔴 غير متصل{% endif %}
+            </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-right:auto;">
+            <a href="{{ url_for('calls.call_audio', user_id=other_user.id) }}" style="color:#10B981;font-size:18px;text-decoration:none;padding:6px 10px;border-radius:50%;background:#2D2D44;">
+                <i class="fas fa-phone"></i>
+            </a>
+            <a href="{{ url_for('calls.call_video', user_id=other_user.id) }}" style="color:#8B5CF6;font-size:18px;text-decoration:none;padding:6px 10px;border-radius:50%;background:#2D2D44;">
+                <i class="fas fa-video"></i>
+            </a>
+            <a href="{{ url_for('messages.messages') }}" style="color:#A0A0B0;text-decoration:none;padding:6px 10px;border-radius:50%;background:#2D2D44;">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- منطقة الرسائل -->
+    <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;background:#0F0F1A;" id="chatMessages">
+        <div style="text-align:center;color:#A0A0B0;padding:20px;">
+            <i class="fas fa-comment" style="font-size:32px;"></i>
+            <p style="margin-top:12px;">جاري تحميل الرسائل...</p>
+        </div>
+    </div>
+
+    <!-- صندوق المعاينة المباشرة -->
+    <div id="livePreviewContainer" style="display:none;padding:4px 16px;background:#1A1A2E;border-top:1px solid #2D2D44;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:#8B5CF6;font-weight:600;font-size:13px;" id="livePreviewName"></span>
+            <span style="color:#A0A0B0;font-size:12px;">يكتب:</span>
+            <span style="color:#fff;font-size:14px;background:#2D2D44;padding:4px 12px;border-radius:16px;flex:1;" id="livePreviewText"></span>
+        </div>
+    </div>
+
+    <!-- حقل الإدخال -->
+    <div style="padding:12px;border-top:1px solid #2D2D44;display:flex;gap:8px;background:#1A1A2E;align-items:center;flex-shrink:0;">
+        <button onclick="document.getElementById('fileInput').click()" style="padding:10px;border-radius:50%;border:none;background:#2D2D44;color:#8B5CF6;cursor:pointer;font-size:18px;">
+            <i class="fas fa-camera"></i>
+        </button>
+        <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;" onchange="sendMedia(event)">
+
+        <button onclick="toggleRecording()" id="recordBtn" style="padding:10px;border-radius:50%;border:none;background:#2D2D44;color:#10B981;cursor:pointer;font-size:18px;transition:all 0.3s;">
+            <i class="fas fa-microphone"></i>
+        </button>
+
+        <input type="text" id="chatInput" placeholder="اكتب رسالة..."
+               style="flex:1;padding:10px 16px;border-radius:20px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;outline:none;">
+
+        <button onclick="sendChatMessage()" id="sendBtn" style="padding:10px 20px;border-radius:20px;border:none;background:linear-gradient(135deg,#8B5CF6,#EC4899);color:white;font-weight:600;cursor:pointer;display:none;align-items:center;gap:6px;">
+            <i class="fas fa-paper-plane"></i> إرسال
+        </button>
+    </div>
+</div>
+
+<style>
+    /* ✅ أنماط العد التنازلي المتلاشي */
+    .countdown-message {
+        padding: 10px 20px;
+        border-radius: 12px;
+        margin: 4px 0;
+        align-self: center;
+        min-width: 80px;
+        text-align: center;
+        font-size: 28px;
+        font-weight: 900;
+        color: white;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        animation: countdownPulse 0.6s ease;
+        position: relative;
+    }
+
+    @keyframes countdownFade {
+        0% { opacity: 0; transform: scale(0.3) rotate(-10deg); }
+        50% { opacity: 1; transform: scale(1.3) rotate(3deg); }
+        100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+
+    @keyframes countdownPulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.15); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes countdownExplode {
+        0% { transform: scale(1); opacity: 1; filter: blur(0px); }
+        100% { transform: scale(2.5); opacity: 0; filter: blur(10px); }
+    }
+
+    .countdown-explode { animation: countdownExplode 0.5s ease forwards !important; }
+    .countdown-enter { animation: countdownFade 0.3s ease forwards !important; }
+
+    .encrypted-message {
+        cursor: pointer;
+        font-family: monospace;
+        letter-spacing: 1px;
+        font-size: 16px;
+        color: #8B5CF6;
+        transition: all 0.3s ease;
+    }
+    .encrypted-message:hover {
+        text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+    }
+</style>
+
+<script>
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const livePreviewContainer = document.getElementById('livePreviewContainer');
+    const livePreviewText = document.getElementById('livePreviewText');
+    const livePreviewName = document.getElementById('livePreviewName');
+    const chatMessages = document.getElementById('chatMessages');
+
+    let typingTimeout = null;
+    let lastSentText = '';
+    let lastMessageId = 0;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let countdownTimers = {};
+
+    // ================================================================
+    // ✅ دالة التشفير
+    // ================================================================
+    function encryptText(text) {
+        const cipherMap = {
+            'ا': '☯', 'ب': '◉', 'ت': '✦', 'ث': '✧', 'ج': '⬡',
+            'ح': '❖', 'خ': '✦', 'د': '◈', 'ذ': '⟡', 'ر': '⌘',
+            'ز': '⌂', 'س': '☰', 'ش': '☷', 'ص': '☲', 'ض': '☳',
+            'ط': '☴', 'ظ': '☵', 'ع': '☶', 'غ': '☷', 'ف': '☸',
+            'ق': '☹', 'ك': '☺', 'ل': '☻', 'م': '☼', 'ن': '☽',
+            'ه': '☾', 'و': '☿', 'ي': '♁', ' ': '␣', '!': '❗',
+            '؟': '❓', '.': '•', ',': '،', ';': '؛'
+        };
+        let result = '';
+        for (let char of text) {
+            result += cipherMap[char] || char;
+        }
+        return result;
+    }
+
+    // ================================================================
+    // ✅ فك التشفير المؤقت (ضغط/رفع الإصبع)
+    // ================================================================
+    function toggleDecrypt(element) {
+        const isEncrypted = element.dataset.encrypted === 'true';
+        if (!isEncrypted) return;
+
+        if (element.dataset.showing === 'true') {
+            element.textContent = encryptText(element.dataset.original);
+            element.dataset.showing = 'false';
+            element.style.color = '#8B5CF6';
+            element.style.fontFamily = 'monospace';
+        } else {
+            element.textContent = element.dataset.original;
+            element.dataset.showing = 'true';
+            element.style.color = '#10B981';
+            element.style.fontFamily = 'inherit';
+        }
+    }
+
+    // ================================================================
+    // ✅ العد التنازلي مع تأثير البرق
+    // ================================================================
+    function startCountdown(messageId, messageDiv) {
+        let count = 10;
+
+        messageDiv.style.background = 'rgba(139, 92, 246, 0.15)';
+        messageDiv.style.border = '2px solid #8B5CF6';
+        messageDiv.style.boxShadow = '0 0 30px rgba(139, 92, 246, 0.3)';
+        messageDiv.style.minWidth = '60px';
+        messageDiv.style.padding = '6px 16px';
+        messageDiv.style.fontSize = '16px';
+        messageDiv.style.fontWeight = '600';
+        messageDiv.style.position = 'relative';
+
+        const originalText = messageDiv.dataset.originalContent || 'رسالة';
+        messageDiv.innerHTML = `<span style="font-size:12px;color:#A0A0B0;display:block;">${originalText}</span><span id="countdown-${messageId}" style="font-size:24px;font-weight:900;color:#8B5CF6;display:block;margin-top:2px;">⚡ 10</span>`;
+
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                const countEl = document.getElementById(`countdown-${messageId}`);
+                if (countEl) {
+                    countEl.textContent = `⚡ ${count}`;
+                    countEl.style.transition = 'all 0.1s ease';
+                    countEl.style.transform = 'scale(1.3)';
+                    countEl.style.color = count > 7 ? '#10B981' : count > 4 ? '#F59E0B' : '#EF4444';
+                    setTimeout(() => { countEl.style.transform = 'scale(1)'; }, 100);
+                    messageDiv.style.borderColor = count > 7 ? '#10B981' : count > 4 ? '#F59E0B' : '#EF4444';
+                    messageDiv.style.boxShadow = `0 0 30px ${count > 7 ? 'rgba(16, 185, 129, 0.3)' : count > 4 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`;
+                }
+            } else {
+                clearInterval(interval);
+                messageDiv.style.transition = 'all 0.5s ease';
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transform = 'scale(0.8)';
+                messageDiv.style.filter = 'blur(4px)';
+                setTimeout(() => {
+                    if (messageDiv.parentNode) { messageDiv.remove(); }
+                }, 500);
+            }
+        }, 700);
+    }
+
+    // ================================================================
+    // ✅ عرض الرسائل
+    // ================================================================
+    function renderMessages(messages) {
+        chatMessages.innerHTML = '';
+        if (messages.length === 0) {
+            chatMessages.innerHTML = `
+                <div style="text-align:center;color:#A0A0B0;padding:20px;">
+                    <i class="fas fa-comment" style="font-size:32px;"></i>
+                    <p style="margin-top:12px;">ابدأ الدردشة مع {{ other_user.full_name }}</p>
+                </div>
+            `;
+            return;
+        }
+
+        messages.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            const isSent = msg.sender_id == {{ user.id }};
+
+            if (msg.deleted) {
+                msgDiv.style.cssText = 'padding:6px 16px;border-radius:12px;margin:4px 0;align-self:center;min-width:60px;text-align:center;background:rgba(139, 92, 246, 0.1);border:2px solid #8B5CF6;transition:all 0.3s ease;';
+                msgDiv.dataset.originalContent = msg.text || 'رسالة محذوفة';
+                msgDiv.innerHTML = `<span style="font-size:12px;color:#A0A0B0;display:block;">${msg.text || 'رسالة'}</span><span id="countdown-${msg.id}" style="font-size:20px;font-weight:900;color:#8B5CF6;display:block;margin-top:2px;">⚡ 10</span>`;
+                chatMessages.appendChild(msgDiv);
+                setTimeout(() => { startCountdown(msg.id, msgDiv); }, 500);
+                return;
+            }
+
+            // ✅ بناء محتوى الرسالة مع التشفير
+            let content = '';
+            let isEncrypted = msg.encrypted || false;
+            let originalText = msg.text || '';
+            let displayText = isEncrypted ? encryptText(originalText) : originalText;
+
+            if (displayText) {
+                if (isEncrypted) {
+                    content += `<span class="encrypted-message" 
+                              data-original="${originalText}" 
+                              data-encrypted="true" 
+                              data-showing="false"
+                              onclick="toggleDecrypt(this)">${displayText}</span>`;
+                } else {
+                    content += `<span>${displayText}</span>`;
+                }
+            }
+
+            if (msg.audio) content += `<audio controls style="width:200px;height:30px;margin-top:4px;"><source src="${msg.audio}"></audio>`;
+            if (msg.image) content += `<img src="${msg.image}" style="max-width:200px;border-radius:8px;margin-top:4px;">`;
+            if (msg.video) content += `<video src="${msg.video}" style="max-width:200px;border-radius:8px;margin-top:4px;" controls></video>`;
+
+            msgDiv.style.cssText = isSent
+                ? 'background:linear-gradient(135deg,#8B5CF6,#EC4899);color:white;padding:10px 16px;border-radius:12px;margin:4px 0;align-self:flex-end;max-width:80%;text-align:right;margin-right:auto;word-wrap:break-word;'
+                : 'background:#2D2D44;padding:10px 16px;border-radius:12px;margin:4px 0;align-self:flex-start;max-width:80%;word-wrap:break-word;';
+            msgDiv.innerHTML = content;
+
+            // ✅ أزرار للمرسل فقط
+            if (isSent) {
+                const btnContainer = document.createElement('div');
+                btnContainer.style.cssText = 'display:flex;gap:6px;margin-top:4px;justify-content:flex-end;';
+
+                const stormBtn = document.createElement('button');
+                stormBtn.textContent = '🌪️';
+                stormBtn.style.cssText = 'background:none;border:none;color:#FF6B6B;cursor:pointer;font-size:14px;transition:all 0.3s;';
+                stormBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    stormDeleteMessage(msg.id, msgDiv);
+                };
+                btnContainer.appendChild(stormBtn);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.style.cssText = 'background:none;border:none;color:#FF6B6B;cursor:pointer;font-size:14px;transition:all 0.3s;';
+                deleteBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    deleteMessage(msg.id, msgDiv);
+                };
+                btnContainer.appendChild(deleteBtn);
+
+                msgDiv.appendChild(btnContainer);
+            }
+
+            chatMessages.appendChild(msgDiv);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // ================================================================
+    // ✅ حذف رسالة عادي
+    // ================================================================
+    async function deleteMessage(messageId, msgDiv) {
+        try {
+            const res = await fetch(`/messages/api/delete/${messageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (msgDiv) {
+                    msgDiv.style.transition = 'all 0.4s ease';
+                    msgDiv.style.opacity = '0';
+                    msgDiv.style.transform = 'scale(0.3) rotate(-10deg)';
+                    setTimeout(() => { if (msgDiv.parentNode) { msgDiv.remove(); } }, 400);
+                }
+                showToast('✅ تم حذف الرسالة');
+            }
+        } catch(e) {
+            console.error('Error deleting message:', e);
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    // ================================================================
+    // ✅ حذف العاصفة
+    // ================================================================
+    async function stormDeleteMessage(messageId, msgDiv) {
+        try {
+            msgDiv.style.transition = 'all 0.05s linear';
+            msgDiv.style.position = 'relative';
+            let angle = 0;
+            let radius = 10;
+            let stormInterval = setInterval(() => {
+                angle += 15;
+                radius += 2;
+                const rad = angle * Math.PI / 180;
+                const x = radius * Math.cos(rad);
+                const y = radius * Math.sin(rad);
+                msgDiv.style.transform = `translate(${x}px, ${y}px) rotate(${angle}deg) scale(${1 - (radius / 200)})`;
+                msgDiv.style.opacity = 1 - (radius / 200);
+                if (radius > 180) {
+                    clearInterval(stormInterval);
+                    msgDiv.style.transition = 'all 0.3s ease';
+                    msgDiv.style.opacity = '0';
+                    msgDiv.style.transform = 'scale(0.1) rotate(720deg)';
+                    setTimeout(() => { if (msgDiv.parentNode) { msgDiv.remove(); } }, 300);
+                }
+            }, 30);
+
+            const res = await fetch(`/messages/api/storm-delete/${messageId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) { showToast('🌪️ تم حذف الرسالة بعاصفة!'); }
+        } catch(e) {
+            console.error('Error storm deleting message:', e);
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    // ================================================================
+    // ✅ باقي الدوال
+    // ================================================================
+
+    chatInput.addEventListener('input', function() {
+        const text = this.value.trim();
+        sendBtn.style.display = text.length > 0 ? 'flex' : 'none';
+        if (text.length > 0) { showLivePreview('أنت', text); } else { hideLivePreview(); }
+        if (text.length > 0 && text !== lastSentText) {
+            lastSentText = text;
+            fetch('/messages/api/typing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    receiver_id: {{ other_user.id }},
+                    text: text,
+                    is_typing: true
+                })
+            }).catch(err => console.error('❌ خطأ:', err));
+        }
+        if (text.length === 0 && lastSentText.length > 0) {
+            lastSentText = '';
+            fetch('/messages/api/typing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    receiver_id: {{ other_user.id }},
+                    text: '',
+                    is_typing: false
+                })
+            }).catch(err => console.error('❌ خطأ:', err));
+        }
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => { if (text.length === 0) { hideLivePreview(); } }, 2000);
+    });
+
+    let autoRefreshInterval = setInterval(loadMessages, 2000);
+
+    async function toggleRecording() {
+        if (isRecording) { stopRecording(); } else { startRecording(); }
+    }
+
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = (event) => { audioChunks.push(event.data); };
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const audioData = e.target.result;
+                    sendAudioMessage(audioData);
+                };
+                reader.readAsDataURL(audioBlob);
+                audioChunks = [];
+            };
+            mediaRecorder.start();
+            isRecording = true;
+            const btn = document.getElementById('recordBtn');
+            btn.style.background = '#EF4444';
+            btn.style.color = 'white';
+            btn.innerHTML = '<i class="fas fa-stop"></i>';
+            showToast('🎤 جاري التسجيل... اضغط للإيقاف');
+        } catch(e) {
+            showToast('❌ لا يمكن الوصول إلى الميكروفون');
+            console.error(e);
+        }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            isRecording = false;
+            const btn = document.getElementById('recordBtn');
+            btn.style.background = '#2D2D44';
+            btn.style.color = '#10B981';
+            btn.innerHTML = '<i class="fas fa-microphone"></i>';
+            showToast('✅ تم التسجيل');
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+    }
+
+    async function sendAudioMessage(audioData) {
+        try {
+            const res = await fetch('/messages/api/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    receiver_id: {{ other_user.id }},
+                    audio: audioData
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('🎤 تم إرسال الصوت');
+                loadMessages();
+            }
+        } catch(e) {
+            console.error('Error:', e);
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    function sendMedia(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const mediaData = e.target.result;
+            const type = file.type.startsWith('video/') ? 'video' : 'image';
+            const text = file.type.startsWith('video/') ? '🎬 فيديو' : '📸 صورة';
+            fetch('/messages/api/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    receiver_id: {{ other_user.id }},
+                    media: mediaData,
+                    type: type,
+                    text: text
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('✅ تم الإرسال');
+                    loadMessages();
+                }
+            })
+            .catch(err => console.error('Error:', err));
+        };
+        reader.readAsDataURL(file);
+        event.target.value = '';
+    }
+
+    function loadMessages() {
+        fetch('/messages/api/get/{{ other_user.id }}')
+        .then(res => res.json())
+        .then(messages => {
+            if (messages.length > 0) {
+                const lastMsg = messages[messages.length - 1];
+                if (lastMsg.id > lastMessageId) {
+                    renderMessages(messages);
+                    lastMessageId = lastMsg.id;
+                }
+            } else {
+                renderMessages(messages);
+            }
+        })
+        .catch(err => console.error('❌ خطأ في تحميل الرسائل:', err));
+    }
+
+    function sendChatMessage() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        const msgDiv = document.createElement('div');
+        msgDiv.style.cssText = 'background:linear-gradient(135deg,#8B5CF6,#EC4899);color:white;padding:10px 16px;border-radius:12px;margin:4px 0;align-self:flex-end;max-width:80%;text-align:right;margin-right:auto;word-wrap:break-word;';
+        msgDiv.textContent = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        chatInput.value = '';
+        sendBtn.style.display = 'none';
+        hideLivePreview();
+
+        fetch('/messages/api/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                receiver_id: {{ other_user.id }},
+                text: text
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ تم إرسال الرسالة');
+                setTimeout(loadMessages, 500);
+            }
+        })
+        .catch(err => console.error('❌ خطأ في الإرسال:', err));
+    }
+
+    function showLivePreview(name, text) {
+        livePreviewName.textContent = name || 'شخص ما';
+        livePreviewText.textContent = text || '...';
+        livePreviewContainer.style.display = 'block';
+    }
+
+    function hideLivePreview() {
+        livePreviewContainer.style.display = 'none';
+    }
+
+    function fetchLivePreview() {
+        fetch('/messages/api/live-preview')
+        .then(res => res.json())
+        .then(data => {
+            if (data.text && data.text.trim().length > 0) {
+                showLivePreview(data.user_name || 'الطرف الآخر', data.text);
+            } else {
+                hideLivePreview();
+            }
+        })
+        .catch(err => console.error('❌ خطأ في جلب المعاينة:', err));
+    }
+
+    // ================================================================
+    // ✅ بدء التشغيل
+    // ================================================================
+    setInterval(fetchLivePreview, 1000);
+    loadMessages();
+
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { sendChatMessage(); }
+    });
+
+    window.addEventListener('beforeunload', function() {
+        clearInterval(autoRefreshInterval);
+        if (isRecording) { stopRecording(); }
+        Object.values(countdownTimers).forEach(interval => clearInterval(interval));
+    });
+
+    console.log('✅ الدردشة تعمل مع التشفير والعد التنازلي!');
+</script>
+{% endblock %}
+
+<!-- ✅ نظام المكالمات في الخلفية -->
+<script>
+    let callCheckInterval = null;
+    let isCallActive = false;
+
+    function checkIncomingCall() {
+        fetch('/calls/api/check/{{ user.id }}')
+        .then(res => res.json())
+        .then(data => {
+            if (data.has_call && !isCallActive) {
+                isCallActive = true;
+                showIncomingCall(data);
+            }
+        })
+        .catch(err => console.error('Error checking calls:', err));
+    }
+
+    function showIncomingCall(data) {
+        // ✅ نافذة منبثقة للمكالمة الواردة
+        const modal = document.createElement('div');
+        modal.id = 'incomingCallModal';
+        modal.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+            z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            animation: fadeIn 0.5s ease;
+        `;
+        modal.innerHTML = `
+            <img src="${data.caller_avatar}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:4px solid #8B5CF6;margin-bottom:16px;animation:pulse 1.5s infinite;">
+            <div style="font-size:28px;font-weight:700;margin-bottom:8px;">${data.caller_name}</div>
+            <div style="font-size:16px;color:#A0A0B0;margin-bottom:30px;">📞 ${data.type === 'video' ? 'مكالمة فيديو' : 'مكالمة صوتية'}</div>
+            <div style="display:flex;gap:30px;">
+                <button onclick="acceptCall(${data.call_id})" style="width:70px;height:70px;border-radius:50%;border:none;background:#10B981;color:white;font-size:28px;cursor:pointer;transition:all 0.3s;">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button onclick="rejectCall(${data.call_id})" style="width:70px;height:70px;border-radius:50%;border:none;background:#EF4444;color:white;font-size:28px;cursor:pointer;transition:all 0.3s;">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+            </div>
+            <audio id="ringtone" loop>
+                <source src="https://www.soundjay.com/phone/phone-ring-01.mp3" type="audio/mpeg">
+            </audio>
+        `;
+        document.body.appendChild(modal);
+        
+        // تشغيل صوت الرنين
+        const ringtone = document.getElementById('ringtone');
+        if (ringtone) {
+            ringtone.play().catch(e => console.log('Sound play error:', e));
+        }
+    }
+
+    async function acceptCall(callId) {
+        try {
+            const res = await fetch(`/calls/api/${callId}/accept`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                document.getElementById('incomingCallModal')?.remove();
+                document.getElementById('ringtone')?.pause();
+                // الانتقال لصفحة المكالمة
+                window.location.href = `/calls/${data.caller_id}/incoming/${callId}`;
+            }
+        } catch(e) {
+            console.error('Error accepting call:', e);
+        }
+    }
+
+    async function rejectCall(callId) {
+        try {
+            await fetch(`/calls/api/${callId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            document.getElementById('incomingCallModal')?.remove();
+            document.getElementById('ringtone')?.pause();
+            isCallActive = false;
+        } catch(e) {
+            console.error('Error rejecting call:', e);
+        }
+    }
+
+    // بدء مراقبة المكالمات كل 3 ثواني
+    callCheckInterval = setInterval(checkIncomingCall, 3000);
+
+    // تنظيف عند الخروج
+    window.addEventListener('beforeunload', function() {
+        if (callCheckInterval) {
+            clearInterval(callCheckInterval);
+        }
+    });
+</script>

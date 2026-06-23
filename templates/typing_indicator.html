@@ -1,0 +1,99 @@
+<!-- ميزة "يكتب..." - Typing Indicator -->
+<div class="typing-indicator" id="typingIndicator" style="display:none;padding:8px 12px;background:#1A1A2E;border-radius:12px;border:1px solid #2D2D44;margin:4px 0;">
+    <span style="color:#A0A0B0;font-size:13px;" id="typingName">شخص ما</span>
+    <span style="color:#A0A0B0;font-size:13px;margin:0 4px;">يكتب</span>
+    <div class="typing-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+
+<script>
+    // ================================================================
+    // نظام "يكتب..." - Typing Indicator
+    // ================================================================
+    
+    let typingTimeout = null;
+    let isTyping = false;
+    const typingIndicator = document.getElementById('typingIndicator');
+    const typingName = document.getElementById('typingName');
+
+    // إظهار مؤشر الكتابة
+    function showTyping(name) {
+        typingName.textContent = name;
+        typingIndicator.style.display = 'flex';
+        typingIndicator.style.animation = 'fadeIn 0.3s ease';
+    }
+
+    // إخفاء مؤشر الكتابة
+    function hideTyping() {
+        typingIndicator.style.display = 'none';
+    }
+
+    // عند بدء الكتابة (من المستخدم الحالي)
+    function startTyping(receiverId, userName) {
+        // إرسال إشارة للطرف الآخر
+        socket.emit('typing', {
+            receiver_id: receiverId,
+            is_typing: true,
+            user_name: userName
+        });
+    }
+
+    // عند التوقف عن الكتابة
+    function stopTyping(receiverId) {
+        socket.emit('typing', {
+            receiver_id: receiverId,
+            is_typing: false
+        });
+    }
+
+    // استقبال إشارة الكتابة من الطرف الآخر
+    function onTyping(data) {
+        if (data.is_typing) {
+            showTyping(data.user_name || 'شخص ما');
+            clearTimeout(typingTimeout);
+        } else {
+            typingTimeout = setTimeout(() => {
+                hideTyping();
+            }, 500);
+        }
+    }
+
+    // مراقبة حقل الكتابة
+    function setupTypingListener(inputElement, receiverId, userName) {
+        let typingTimer = null;
+        
+        inputElement.addEventListener('input', function() {
+            const text = this.value.trim();
+            
+            if (text.length > 0 && !isTyping) {
+                isTyping = true;
+                startTyping(receiverId, userName);
+            }
+            
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                if (isTyping) {
+                    isTyping = false;
+                    stopTyping(receiverId);
+                }
+            }, 1000);
+        });
+        
+        inputElement.addEventListener('blur', function() {
+            if (isTyping) {
+                isTyping = false;
+                stopTyping(receiverId);
+            }
+        });
+    }
+
+    // ================================================================
+    // استخدام مع Socket.IO (سيتم إضافته لاحقاً)
+    // ================================================================
+    // socket.on('typing', onTyping);
+    
+    console.log('✅ نظام "يكتب..." جاهز!');
+</script>

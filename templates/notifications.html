@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}الإشعارات{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+        <h2 style="margin-bottom:16px;">🔔 الإشعارات</h2>
+        
+        <div style="background:#2D2D44;padding:8px;border-radius:8px;margin-bottom:12px;font-size:12px;color:#A0A0B0;">
+            عدد الإشعارات: {{ notifications|length }}
+        </div>
+        
+        {% if notifications %}
+            {% for n in notifications %}
+            <div style="padding:12px;border-bottom:1px solid #2D2D44;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <img src="{{ n.from_user.avatar if n.from_user else 'https://i.pravatar.cc/150?img=1' }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                <div style="flex:1;">
+                    <div style="font-weight:500;">{{ n.message }}</div>
+                    <div style="font-size:12px;color:#A0A0B0;">
+                        النوع: {{ n.type }} |
+                        {{ n.created_at.strftime('%Y-%m-%d %H:%M') if n.created_at else '' }}
+                    </div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                    <button onclick="acceptFriend({{ n.from_user_id }})" style="padding:6px 20px;border-radius:20px;border:none;background:#10B981;color:white;font-weight:600;cursor:pointer;font-size:13px;">
+                        قبول
+                    </button>
+                    <button onclick="rejectFriend({{ n.from_user_id }})" style="padding:6px 20px;border-radius:20px;border:none;background:#EF4444;color:white;font-weight:600;cursor:pointer;font-size:13px;">
+                        رفض
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align:center;padding:40px;color:#A0A0B0;">
+                <i class="fas fa-bell-slash" style="font-size:48px;"></i>
+                <p style="margin-top:12px;">لا توجد إشعارات</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timeout);
+            t._timeout = setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    }
+
+    async function acceptFriend(userId) {
+        if (!userId || userId == 0) {
+            showToast('❌ خطأ: معرف المستخدم غير صحيح');
+            return;
+        }
+        try {
+            const res = await fetch(`/friends/accept/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ ' + data.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ في الاتصال');
+        }
+    }
+
+    async function rejectFriend(userId) {
+        if (!userId || userId == 0) {
+            showToast('❌ خطأ: معرف المستخدم غير صحيح');
+            return;
+        }
+        try {
+            const res = await fetch(`/friends/reject/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ تم رفض الطلب');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ في الاتصال');
+        }
+    }
+</script>
+{% endblock %}

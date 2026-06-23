@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Socialite - {% block title %}الرئيسية{% endblock %}</title>
+    <!-- ✅ PWA / تطبيق Android -->
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#8B5CF6">
+
+<!-- ✅ Service Worker -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/static/sw.js')
+                .then(function(registration) {
+                    console.log('✅ Service Worker مسجل بنجاح:', registration);
+                })
+                .catch(function(error) {
+                    console.log('❌ فشل تسجيل Service Worker:', error);
+                });
+        });
+    }
+</script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#0F0F1A;color:#fff;direction:rtl;padding:0;max-width:600px;margin:0 auto;padding-bottom:80px}
+        .main-content{padding:12px;}
+        .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#1A1A2E;color:#fff;padding:10px 24px;border-radius:30px;font-size:14px;border:1px solid #2D2D44;opacity:0;transition:all 0.3s;z-index:999;pointer-events:none}
+        .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+        .bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:600px;margin:0 auto;background:#1A1A2E;border-top:1px solid #2D2D44;display:flex;justify-content:space-around;padding:8px 0 12px;z-index:100}
+        .bottom-nav a{color:#A0A0B0;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;padding:4px 8px;transition:all 0.3s}
+        .bottom-nav a.active{color:#8B5CF6}
+        .bottom-nav a i{font-size:22px}
+        .bottom-nav .camera i{font-size:32px;color:#8B5CF6}
+        .bottom-nav a:hover{color:#8B5CF6}
+
+        .header-actions{display:flex;align-items:center;gap:12px}
+        .header-actions a{color:#A0A0B0;text-decoration:none;font-size:18px}
+        .logout-btn{color:#EF4444;font-size:13px;text-decoration:none;background:none;border:none;cursor:pointer}
+
+        .encryption-bar{background:#1A1A2E;border-bottom:1px solid #2D2D44;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+        .encryption-bar .label{font-size:13px;color:#A0A0B0}
+        .encryption-btn{padding:4px 16px;border-radius:12px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.3s;color:white}
+        .encryption-btn.active{background:#10B981}
+        .encryption-btn.inactive{background:#EF4444}
+
+        /* ✅ نافذة المكالمة الواردة */
+        #incomingCallModal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+            z-index: 9999; display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            animation: fadeIn 0.5s ease;
+        }
+        #incomingCallModal.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        
+        /* ✅ شريط لوحة التحكم للمالك */
+        .admin-bar{background:#1A1A2E;border-bottom:1px solid #2D2D44;padding:6px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+        .admin-bar a{color:#8B5CF6;text-decoration:none;font-size:13px;font-weight:600;padding:4px 12px;border-radius:8px;transition:all 0.3s}
+        .admin-bar a:hover{background:#2D2D44}
+        .admin-bar .admin-icon{color:#F59E0B;margin-left:4px}
+    </style>
+</head>
+<body>
+    <!-- ✅ شريط التشفير السريع -->
+    {% if user.is_authenticated %}
+    <div class="encryption-bar">
+        <span class="label">🔐 التشفير التلقائي</span>
+        <button onclick="toggleEncryptionQuick()" id="encryptionToggleQuick" class="encryption-btn {% if user.encryption_enabled %}active{% else %}inactive{% endif %}">
+            {% if user.encryption_enabled %}🟢 مفعل{% else %}🔴 معطل{% endif %}
+        </button>
+    </div>
+    {% endif %}
+    
+    <!-- ✅ شريط لوحة التحكم (للمالك فقط) -->
+    {% if user.is_authenticated and user.is_admin %}
+    <div class="admin-bar">
+        <span class="admin-icon">👑</span>
+        <a href="{{ url_for('admin.dashboard') }}">📊 لوحة التحكم</a>
+        <a href="{{ url_for('admin.users') }}">👥 المستخدمين</a>
+        <a href="{{ url_for('admin.posts') }}">📝 المنشورات</a>
+        <a href="{{ url_for('admin.messages') }}">💬 الرسائل</a>
+    </div>
+    {% endif %}
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="{{ url_for('pages.index') }}" class="{% if request.endpoint == 'pages.index' %}active{% endif %}">
+            <i class="fas fa-home"></i> الرئيسية
+        </a>
+        <a href="{{ url_for('pages.stories') }}" class="{% if request.endpoint == 'pages.stories' %}active{% endif %}">
+            <i class="fas fa-circle-play"></i> قصص
+        </a>
+        <a href="{{ url_for('pages.camera') }}" class="camera {% if request.endpoint == 'pages.camera' %}active{% endif %}">
+            <i class="fas fa-plus-circle"></i>
+        </a>
+        <a href="{{ url_for('messages.messages') }}" class="{% if request.endpoint == 'messages.messages' %}active{% endif %}">
+            <i class="fas fa-comment-dots"></i> رسائل
+        </a>
+        <a href="{{ url_for('profile.profile') }}" class="{% if request.endpoint == 'profile.profile' %}active{% endif %}">
+            <i class="fas fa-user"></i> الملف
+        </a>
+    </nav>
+
+    <!-- ✅ نافذة المكالمة الواردة -->
+    <div id="incomingCallModal">
+        <img id="callerAvatar" src="" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:4px solid #8B5CF6;margin-bottom:16px;animation:pulse 1.5s infinite;">
+        <div id="callerName" style="font-size:28px;font-weight:700;margin-bottom:8px;"></div>
+        <div id="callTypeText" style="font-size:16px;color:#A0A0B0;margin-bottom:30px;">📞 جاري الاتصال...</div>
+        <div style="display:flex;gap:30px;">
+            <button onclick="acceptIncomingCall()" style="width:70px;height:70px;border-radius:50%;border:none;background:#10B981;color:white;font-size:28px;cursor:pointer;transition:all 0.3s;">
+                <i class="fas fa-phone"></i>
+            </button>
+            <button onclick="rejectIncomingCall()" style="width:70px;height:70px;border-radius:50%;border:none;background:#EF4444;color:white;font-size:28px;cursor:pointer;transition:all 0.3s;">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+        <audio id="ringtone" loop>
+            <source src="https://www.soundjay.com/phone/phone-ring-01.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timeout);
+            t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        async function toggleEncryptionQuick() {
+            try {
+                const res = await fetch('/profile/toggle-encryption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const btn = document.getElementById('encryptionToggleQuick');
+                    if (data.encryption_enabled) {
+                        btn.textContent = '🟢 مفعل';
+                        btn.className = 'encryption-btn active';
+                    } else {
+                        btn.textContent = '🔴 معطل';
+                        btn.className = 'encryption-btn inactive';
+                    }
+                    showToast(data.message);
+                }
+            } catch(e) {
+                showToast('❌ حدث خطأ');
+            }
+        }
+
+        let callCheckInterval = null;
+        let currentCallId = null;
+        let isCallActive = false;
+        let ringtone = null;
+
+        function checkIncomingCall() {
+            {% if user.is_authenticated %}
+            fetch('/calls/api/check/{{ user.id }}')
+            .then(res => res.json())
+            .then(data => {
+                if (data.has_call && !isCallActive) {
+                    isCallActive = true;
+                    currentCallId = data.call_id;
+                    showIncomingCall(data);
+                }
+            })
+            .catch(err => console.error('Error checking calls:', err));
+            {% endif %}
+        }
+
+        function showIncomingCall(data) {
+            const modal = document.getElementById('incomingCallModal');
+            document.getElementById('callerAvatar').src = data.caller_avatar;
+            document.getElementById('callerName').textContent = data.caller_name;
+            document.getElementById('callTypeText').textContent = data.type === 'video' ? '📹 مكالمة فيديو' : '📞 مكالمة صوتية';
+            modal.classList.add('active');
+            ringtone = document.getElementById('ringtone');
+            if (ringtone) {
+                ringtone.play().catch(e => console.log('Sound play error:', e));
+            }
+        }
+
+        async function acceptIncomingCall() {
+            if (!currentCallId) return;
+            try {
+                const res = await fetch(`/calls/api/${currentCallId}/accept`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('incomingCallModal').classList.remove('active');
+                    if (ringtone) ringtone.pause();
+                    isCallActive = false;
+                    window.location.href = `/calls/incoming/${currentCallId}`;
+                }
+            } catch(e) {
+                console.error('Error accepting call:', e);
+                showToast('❌ حدث خطأ');
+            }
+        }
+
+        async function rejectIncomingCall() {
+            if (!currentCallId) return;
+            try {
+                await fetch(`/calls/api/${currentCallId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                document.getElementById('incomingCallModal').classList.remove('active');
+                if (ringtone) ringtone.pause();
+                isCallActive = false;
+                currentCallId = null;
+                showToast('📞 تم رفض المكالمة');
+            } catch(e) {
+                console.error('Error rejecting call:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            callCheckInterval = setInterval(checkIncomingCall, 3000);
+        });
+
+        window.addEventListener('beforeunload', function() {
+            if (callCheckInterval) {
+                clearInterval(callCheckInterval);
+            }
+            if (ringtone) {
+                ringtone.pause();
+            }
+        });
+    </script>
+</body>
+</html>

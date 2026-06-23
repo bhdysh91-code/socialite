@@ -1,0 +1,712 @@
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+import os
+import json
+
+# ================================================================
+# تهيئة التطبيق
+# ================================================================
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'dev-secret-key-2024'
+
+db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance', 'facebook.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+# ================================================================
+# نماذج قاعدة البيانات
+# ================================================================
+
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    bio = db.Column(db.Text, default='')
+    avatar = db.Column(db.String(200), default='https://i.pravatar.cc/150?img=1')
+    cover_photo = db.Column(db.String(200))
+    birthday = db.Column(db.Date)
+    country = db.Column(db.String(100))
+    city = db.Column(db.String(100))
+    gender = db.Column(db.String(20))
+    verified = db.Column(db.Boolean, default=False)
+    online = db.Column(db.Boolean, default=False)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    is_admin = db.Column(db.Boolean, default=False)
+    is_banned = db.Column(db.Boolean, default=False)
+    ban_reason = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
+    
+    def is_friend(self, user_id):
+        friendship = Friendship.query.filter(
+            ((Friendship.user_id == self.id) & (Friendship.friend_id == user_id)) |
+            ((Friendship.user_id == user_id) & (Friendship.friend_id == self.id)),
+            Friendship.status == 'accepted'
+        ).first()
+        return friendship is not None
+    
+    def has_pending_request(self, user_id):
+        request = Friendship.query.filter(
+            (Friendship.user_id == self.id) & (Friendship.friend_id == user_id) |
+            (Friendship.user_id == user_id) & (Friendship.friend_id == self.id),
+            Friendship.status == 'pending'
+        ).first()
+        return request is not None
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'full_name': self.full_name,
+            'bio': self.bio,
+            'avatar': self.avatar,
+            'cover_photo': self.cover_photo,
+            'verified': self.verified,
+            'online': self.online,
+            'is_admin': self.is_admin,
+            'is_banned': self.is_banned,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    image = db.Column(db.String(300))
+    video = db.Column(db.String(300))
+    privacy = db.Column(db.String(20), default='public')
+    shares = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    author = db.relationship('User', backref='posts')
+    comments = db.relationship('Comment', backref='post', lazy=True, cascade='all, delete-orphan')
+    likes = db.relationship('Like', backref='post', lazy=True, cascade='all, delete-orphan')
+    
+    def get_likes_count(self):
+        return Like.query.filter_by(post_id=self.id).count()
+    
+    def get_comments_count(self):
+        return Comment.query.filter_by(post_id=self.id).count()
+    
+    def is_liked_by(self, user_id):
+        return Like.query.filter_by(user_id=user_id, post_id=self.id).first() is not None
+    
+    def to_dict(self, current_user_id=None):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'user_name': self.author.full_name,
+            'user_avatar': self.author.avatar,
+            'verified': self.author.verified,
+            'text': self.text,
+            'image': self.image,
+            'video': self.video,
+            'likes_count': self.get_likes_count(),
+            'comments_count': self.get_comments_count(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'liked': self.is_liked_by(current_user_id) if current_user_id else False,
+            'shares': self.shares
+        }
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    author = db.relationship('User', backref='user_comments')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'user_name': self.author.full_name,
+            'user_avatar': self.author.avatar,
+            'text': self.text,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class Like(db.Model):
+    __tablename__ = 'likes'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'post_id', name='unique_like'),)
+
+class Friendship(db.Model):
+    __tablename__ = 'friendships'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    friend_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'friend_id', name='unique_friendship'),)
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    type = db.Column(db.String(50), nullable=False)
+    from_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+    message = db.Column(db.Text)
+    read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    from_user = db.relationship('User', foreign_keys=[from_user_id])
+    post = db.relationship('Post', foreign_keys=[post_id])
+
+# ================================================================
+# إنشاء قاعدة البيانات
+# ================================================================
+
+with app.app_context():
+    db.create_all()
+    
+    if User.query.count() == 0:
+        admin = User(
+            username='admin',
+            email='admin@facebook.local',
+            full_name='مدير النظام',
+            is_admin=True,
+            verified=True
+        )
+        admin.set_password('Admin@2024#Secure')
+        db.session.add(admin)
+        
+        users_data = [
+            ('ahmed', 'أحمد محمد'),
+            ('sara', 'سارة علي'),
+            ('mohammed', 'محمد خالد'),
+            ('raneem', 'Raneem Zubaidi')
+        ]
+        
+        for i, (username, full_name) in enumerate(users_data):
+            user = User(
+                username=username,
+                email=f'{username}@example.com',
+                full_name=full_name,
+                avatar=f'https://i.pravatar.cc/150?img={i+2}',
+                verified=(username == 'raneem')
+            )
+            user.set_password('123456')
+            db.session.add(user)
+        
+        db.session.commit()
+        
+        posts_data = [
+            'مرحباً بالجميع في فيسبوك! 🚀',
+            'هذا أول منشور لي هنا 🌟',
+            'أتمنى لكم يوماً سعيداً ☀️',
+            'فيسبوك أصبح أفضل بكثير الآن! 💪'
+        ]
+        
+        users = User.query.all()
+        for i, text in enumerate(posts_data):
+            user = users[i % len(users)]
+            post = Post(user_id=user.id, text=text)
+            db.session.add(post)
+        
+        db.session.commit()
+        print('✅ تم إنشاء قاعدة البيانات بنجاح!')
+
+# ================================================================
+# تحميل المستخدم
+# ================================================================
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# ================================================================
+# الصفحات الرئيسية
+# ================================================================
+
+@app.route('/')
+@login_required
+def index():
+    return render_template('index.html', user=current_user)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            if user.is_banned:
+                return render_template('login.html', error='🚫 هذا الحساب محظور')
+            login_user(user)
+            user.online = True
+            user.last_seen = datetime.utcnow()
+            db.session.commit()
+            return redirect(url_for('index'))
+        else:
+            return render_template('login.html', error='❌ اسم المستخدم أو كلمة المرور غير صحيحة')
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        full_name = request.form.get('full_name')
+        
+        if User.query.filter_by(username=username).first():
+            return render_template('register.html', error='❌ اسم المستخدم موجود')
+        
+        if User.query.filter_by(email=email).first():
+            return render_template('register.html', error='❌ البريد الإلكتروني موجود')
+        
+        user = User(
+            username=username,
+            email=email,
+            full_name=full_name,
+            avatar=f'https://i.pravatar.cc/150?img={User.query.count() + 10}'
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        
+        login_user(user)
+        return redirect(url_for('index'))
+    
+    return render_template('register.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    current_user.online = False
+    current_user.last_seen = datetime.utcnow()
+    db.session.commit()
+    logout_user()
+    return redirect(url_for('login'))
+
+# ================================================================
+# الملف الشخصي
+# ================================================================
+
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', user=current_user, profile_user=current_user)
+
+@app.route('/profile/<username>')
+@login_required
+def view_profile(username):
+    profile_user = User.query.filter_by(username=username).first_or_404()
+    return render_template('profile.html', user=current_user, profile_user=profile_user)
+
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        current_user.full_name = request.form.get('full_name', current_user.full_name)
+        current_user.bio = request.form.get('bio', current_user.bio)
+        current_user.country = request.form.get('country', current_user.country)
+        current_user.city = request.form.get('city', current_user.city)
+        birthday = request.form.get('birthday')
+        if birthday:
+            try:
+                current_user.birthday = datetime.strptime(birthday, '%Y-%m-%d').date()
+            except:
+                pass
+        current_user.gender = request.form.get('gender', current_user.gender)
+        db.session.commit()
+        flash('✅ تم تحديث الملف الشخصي', 'success')
+        return redirect(url_for('profile'))
+    
+    return render_template('edit_profile.html', user=current_user)
+
+# ================================================================
+# API - المنشورات (Posts)
+# ================================================================
+
+@app.route('/api/posts')
+@login_required
+def api_get_posts():
+    """جلب جميع المنشورات (للأصدقاء والعامة)"""
+    # جلب أصدقاء المستخدم
+    friendships = Friendship.query.filter(
+        ((Friendship.user_id == current_user.id) | (Friendship.friend_id == current_user.id)),
+        Friendship.status == 'accepted'
+    ).all()
+    
+    friend_ids = [current_user.id]
+    for f in friendships:
+        if f.user_id == current_user.id:
+            friend_ids.append(f.friend_id)
+        else:
+            friend_ids.append(f.user_id)
+    
+    posts = Post.query.filter(
+        Post.user_id.in_(friend_ids),
+        Post.privacy.in_(['public', 'friends'])
+    ).order_by(Post.created_at.desc()).limit(30).all()
+    
+    return jsonify([p.to_dict(current_user.id) for p in posts])
+
+@app.route('/api/posts', methods=['POST'])
+@login_required
+def api_create_post():
+    """إنشاء منشور جديد"""
+    data = request.get_json()
+    text = data.get('text', '').strip()
+    
+    if not text:
+        return jsonify({'error': 'نص المنشور مطلوب'}), 400
+    
+    post = Post(
+        user_id=current_user.id,
+        text=text,
+        privacy=data.get('privacy', 'public')
+    )
+    db.session.add(post)
+    db.session.commit()
+    
+    # إنشاء إشعارات للأصدقاء
+    friendships = Friendship.query.filter(
+        ((Friendship.user_id == current_user.id) | (Friendship.friend_id == current_user.id)),
+        Friendship.status == 'accepted'
+    ).all()
+    
+    for f in friendships:
+        friend_id = f.friend_id if f.user_id == current_user.id else f.user_id
+        notif = Notification(
+            user_id=friend_id,
+            type='new_post',
+            from_user_id=current_user.id,
+            post_id=post.id,
+            message=f'{current_user.full_name} نشر منشوراً جديداً'
+        )
+        db.session.add(notif)
+    
+    db.session.commit()
+    
+    return jsonify(post.to_dict(current_user.id))
+
+@app.route('/api/posts/<int:post_id>/like', methods=['POST'])
+@login_required
+def api_toggle_like(post_id):
+    """تبديل الإعجاب (Like/Unlike)"""
+    post = Post.query.get_or_404(post_id)
+    
+    like = Like.query.filter_by(user_id=current_user.id, post_id=post_id).first()
+    
+    if like:
+        db.session.delete(like)
+        liked = False
+    else:
+        like = Like(user_id=current_user.id, post_id=post_id)
+        db.session.add(like)
+        liked = True
+        
+        # إشعار للمالك
+        if post.user_id != current_user.id:
+            notif = Notification(
+                user_id=post.user_id,
+                type='like',
+                from_user_id=current_user.id,
+                post_id=post_id,
+                message=f'{current_user.full_name} أعجب بمنشورك'
+            )
+            db.session.add(notif)
+    
+    db.session.commit()
+    
+    return jsonify({
+        'liked': liked,
+        'likes_count': post.get_likes_count()
+    })
+
+@app.route('/api/posts/<int:post_id>/comment', methods=['POST'])
+@login_required
+def api_add_comment(post_id):
+    """إضافة تعليق"""
+    data = request.get_json()
+    text = data.get('text', '').strip()
+    
+    if not text:
+        return jsonify({'error': 'نص التعليق مطلوب'}), 400
+    
+    comment = Comment(
+        user_id=current_user.id,
+        post_id=post_id,
+        text=text
+    )
+    db.session.add(comment)
+    db.session.commit()
+    
+    # إشعار للمالك
+    post = Post.query.get(post_id)
+    if post.user_id != current_user.id:
+        notif = Notification(
+            user_id=post.user_id,
+            type='comment',
+            from_user_id=current_user.id,
+            post_id=post_id,
+            message=f'{current_user.full_name} علق على منشورك'
+        )
+        db.session.add(notif)
+        db.session.commit()
+    
+    return jsonify(comment.to_dict())
+
+@app.route('/api/posts/<int:post_id>/comments')
+@login_required
+def api_get_comments(post_id):
+    """جلب تعليقات المنشور"""
+    comments = Comment.query.filter_by(post_id=post_id).order_by(Comment.created_at.desc()).limit(20).all()
+    return jsonify([c.to_dict() for c in comments])
+
+@app.route('/api/posts/<int:post_id>', methods=['DELETE'])
+@login_required
+def api_delete_post(post_id):
+    """حذف منشور"""
+    post = Post.query.get_or_404(post_id)
+    
+    if post.user_id != current_user.id and not current_user.is_admin:
+        return jsonify({'error': 'غير مصرح'}), 403
+    
+    db.session.delete(post)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+# ================================================================
+# API - الأصدقاء (Friends)
+# ================================================================
+
+@app.route('/api/friends')
+@login_required
+def api_get_friends():
+    """جلب قائمة الأصدقاء"""
+    friendships = Friendship.query.filter(
+        ((Friendship.user_id == current_user.id) | (Friendship.friend_id == current_user.id)),
+        Friendship.status == 'accepted'
+    ).all()
+    
+    friend_ids = []
+    for f in friendships:
+        if f.user_id == current_user.id:
+            friend_ids.append(f.friend_id)
+        else:
+            friend_ids.append(f.user_id)
+    
+    friends = User.query.filter(User.id.in_(friend_ids)).all()
+    return jsonify([f.to_dict() for f in friends])
+
+@app.route('/api/friends/requests')
+@login_required
+def api_get_friend_requests():
+    """جلب طلبات الصداقة"""
+    requests = Friendship.query.filter(
+        Friendship.friend_id == current_user.id,
+        Friendship.status == 'pending'
+    ).all()
+    
+    result = []
+    for r in requests:
+        user = User.query.get(r.user_id)
+        result.append({
+            'id': r.id,
+            'user': user.to_dict(),
+            'created_at': r.created_at.isoformat() if r.created_at else None
+        })
+    
+    return jsonify(result)
+
+@app.route('/api/friends/request/<int:user_id>', methods=['POST'])
+@login_required
+def api_send_friend_request(user_id):
+    """إرسال طلب صداقة"""
+    if user_id == current_user.id:
+        return jsonify({'error': 'لا يمكنك إضافة نفسك'}), 400
+    
+    existing = Friendship.query.filter(
+        ((Friendship.user_id == current_user.id) & (Friendship.friend_id == user_id)) |
+        ((Friendship.user_id == user_id) & (Friendship.friend_id == current_user.id))
+    ).first()
+    
+    if existing:
+        return jsonify({'error': 'طلب موجود بالفعل'}), 400
+    
+    friendship = Friendship(user_id=current_user.id, friend_id=user_id, status='pending')
+    db.session.add(friendship)
+    db.session.commit()
+    
+    # إشعار
+    notif = Notification(
+        user_id=user_id,
+        type='friend_request',
+        from_user_id=current_user.id,
+        message=f'{current_user.full_name} أرسل لك طلب صداقة'
+    )
+    db.session.add(notif)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'تم إرسال طلب الصداقة'})
+
+@app.route('/api/friends/accept/<int:request_id>', methods=['POST'])
+@login_required
+def api_accept_friend_request(request_id):
+    """قبول طلب صداقة"""
+    friendship = Friendship.query.get_or_404(request_id)
+    
+    if friendship.friend_id != current_user.id:
+        return jsonify({'error': 'غير مصرح'}), 403
+    
+    friendship.status = 'accepted'
+    db.session.commit()
+    
+    # إشعار
+    notif = Notification(
+        user_id=friendship.user_id,
+        type='friend_accepted',
+        from_user_id=current_user.id,
+        message=f'{current_user.full_name} قبل طلب صداقتك'
+    )
+    db.session.add(notif)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'تم قبول الطلب'})
+
+@app.route('/api/friends/reject/<int:request_id>', methods=['POST'])
+@login_required
+def api_reject_friend_request(request_id):
+    """رفض طلب صداقة"""
+    friendship = Friendship.query.get_or_404(request_id)
+    
+    if friendship.friend_id != current_user.id:
+        return jsonify({'error': 'غير مصرح'}), 403
+    
+    db.session.delete(friendship)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'تم رفض الطلب'})
+
+@app.route('/api/friends/remove/<int:user_id>', methods=['POST'])
+@login_required
+def api_remove_friend(user_id):
+    """إزالة صديق"""
+    friendship = Friendship.query.filter(
+        ((Friendship.user_id == current_user.id) & (Friendship.friend_id == user_id)) |
+        ((Friendship.user_id == user_id) & (Friendship.friend_id == current_user.id)),
+        Friendship.status == 'accepted'
+    ).first()
+    
+    if not friendship:
+        return jsonify({'error': 'ليس صديقاً'}), 400
+    
+    db.session.delete(friendship)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'تم إزالة الصديق'})
+
+# ================================================================
+# API - الإشعارات (Notifications)
+# ================================================================
+
+@app.route('/api/notifications')
+@login_required
+def api_get_notifications():
+    """جلب الإشعارات"""
+    notifs = Notification.query.filter_by(user_id=current_user.id).order_by(
+        Notification.created_at.desc()
+    ).limit(50).all()
+    
+    # تحديث حالة القراءة
+    for n in notifs:
+        n.read = True
+    db.session.commit()
+    
+    return jsonify([n.to_dict() for n in notifs])
+
+@app.route('/api/notifications/unread')
+@login_required
+def api_unread_notifications():
+    """عدد الإشعارات غير المقروءة"""
+    count = Notification.query.filter_by(user_id=current_user.id, read=False).count()
+    return jsonify({'count': count})
+
+# ================================================================
+# API - البحث (Search)
+# ================================================================
+
+@app.route('/api/search/users')
+@login_required
+def api_search_users():
+    """البحث عن مستخدمين"""
+    query = request.args.get('q', '').strip()
+    
+    if len(query) < 2:
+        return jsonify([])
+    
+    users = User.query.filter(
+        (User.username.contains(query)) | (User.full_name.contains(query)),
+        User.id != current_user.id
+    ).limit(10).all()
+    
+    return jsonify([u.to_dict() for u in users])
+
+@app.route('/api/search/posts')
+@login_required
+def api_search_posts():
+    """البحث عن منشورات"""
+    query = request.args.get('q', '').strip()
+    
+    if len(query) < 2:
+        return jsonify([])
+    
+    posts = Post.query.filter(
+        Post.text.contains(query),
+        Post.privacy.in_(['public', 'friends'])
+    ).order_by(Post.created_at.desc()).limit(20).all()
+    
+    return jsonify([p.to_dict(current_user.id) for p in posts])
+
+# ================================================================
+# تشغيل التطبيق
+# ================================================================
+
+if __name__ == '__main__':
+    print('\n' + '='*50)
+    print('🚀 فيسبوك - النسخة التفاعلية')
+    print('='*50)
+    print(f'📂 قاعدة البيانات: {db_path}')
+    print('🌐 http://localhost:5000')
+    print('='*50 + '\n')
+    app.run(host='0.0.0.0', port=5000, debug=True)

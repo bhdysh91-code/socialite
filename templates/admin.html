@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - المالك{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:20px;border:1px solid #2D2D44;margin-bottom:16px;">
+        <h2 style="color:#8B5CF6;margin-bottom:8px;">👑 لوحة تحكم المالك</h2>
+        <p style="color:#A0A0B0;font-size:14px;">مرحباً {{ user.full_name }}، هذه إحصائيات المنصة</p>
+    </div>
+    
+    <!-- إحصائيات سريعة -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px;">
+        <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#8B5CF6;">{{ stats.users }}</div>
+            <div style="font-size:12px;color:#A0A0B0;">👤 مستخدمين</div>
+        </div>
+        <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#10B981;">{{ stats.posts }}</div>
+            <div style="font-size:12px;color:#A0A0B0;">📝 منشورات</div>
+        </div>
+        <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#EC4899;">{{ stats.messages }}</div>
+            <div style="font-size:12px;color:#A0A0B0;">💬 رسائل</div>
+        </div>
+        <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#F59E0B;">{{ stats.verified }}</div>
+            <div style="font-size:12px;color:#A0A0B0;">✅ موثقين</div>
+        </div>
+        <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#EF4444;">{{ stats.banned }}</div>
+            <div style="font-size:12px;color:#A0A0B0;">🚫 محظورين</div>
+        </div>
+    </div>
+    
+    <!-- روابط سريعة -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <a href="{{ url_for('admin.users') }}" style="padding:10px 20px;background:#8B5CF6;color:white;border-radius:10px;text-decoration:none;font-weight:600;">👥 إدارة المستخدمين</a>
+        <a href="{{ url_for('admin.posts') }}" style="padding:10px 20px;background:#10B981;color:white;border-radius:10px;text-decoration:none;font-weight:600;">📝 إدارة المنشورات</a>
+        <a href="{{ url_for('admin.messages') }}" style="padding:10px 20px;background:#EC4899;color:white;border-radius:10px;text-decoration:none;font-weight:600;">💬 عرض الرسائل</a>
+    </div>
+    
+    <!-- آخر المستخدمين -->
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;margin-bottom:12px;">
+        <h3 style="margin-bottom:12px;">🆕 آخر المستخدمين</h3>
+        {% for u in recent_users %}
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2D2D44;">
+            <img src="{{ u.avatar }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+            <div style="flex:1;">
+                <div style="font-weight:600;">{{ u.full_name }}</div>
+                <div style="font-size:12px;color:#A0A0B0;">@{{ u.username }} • {{ u.created_at.strftime('%Y-%m-%d') }}</div>
+            </div>
+            {% if u.verified %}<span style="color:#8B5CF6;">✅</span>{% endif %}
+            {% if u.is_banned %}<span style="color:#EF4444;">🚫</span>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- آخر المنشورات -->
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+        <h3 style="margin-bottom:12px;">📝 آخر المنشورات</h3>
+        {% for p in recent_posts %}
+        <div style="padding:8px 0;border-bottom:1px solid #2D2D44;">
+            <div style="font-weight:600;font-size:13px;">{{ p.author.full_name }}</div>
+            <div style="font-size:13px;color:#A0A0B0;">{{ p.text[:50] }}{% if p.text|length > 50 %}...{% endif %}</div>
+            <div style="font-size:11px;color:#65676b;">{{ p.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

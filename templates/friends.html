@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}الأصدقاء{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <!-- طلبات الصداقة -->
+    {% if pending %}
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;margin-bottom:12px;">
+        <h3 style="margin-bottom:12px;">📨 طلبات الصداقة ({{ pending|length }})</h3>
+        {% for req in pending %}
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2D2D44;">
+            <img src="{{ req.user.avatar }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;cursor:pointer;" onclick="window.location.href='/profile/{{ req.user.username }}'">
+            <div style="flex:1;cursor:pointer;" onclick="window.location.href='/profile/{{ req.user.username }}'">
+                <div style="font-weight:600;">{{ req.user.full_name }}</div>
+                <div style="font-size:12px;color:#A0A0B0;">@{{ req.user.username }}</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+                <button onclick="acceptFriend({{ req.user.id }})" style="padding:4px 16px;border-radius:20px;border:none;background:#10B981;color:white;font-weight:600;cursor:pointer;">قبول</button>
+                <button onclick="rejectFriend({{ req.user.id }})" style="padding:4px 16px;border-radius:20px;border:none;background:#EF4444;color:white;font-weight:600;cursor:pointer;">رفض</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- قائمة الأصدقاء -->
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+        <h3 style="margin-bottom:12px;">👥 الأصدقاء ({{ friends|length }})</h3>
+        {% if friends %}
+            {% for f in friends %}
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2D2D44;">
+                <img src="{{ f.avatar }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;cursor:pointer;" onclick="window.location.href='/profile/{{ f.username }}'">
+                <div style="flex:1;cursor:pointer;" onclick="window.location.href='/profile/{{ f.username }}'">
+                    <div style="font-weight:600;">{{ f.full_name }}</div>
+                    <div style="font-size:12px;color:#A0A0B0;">{{ f.online and '🟢 متصل' or '🔴 غير متصل' }}</div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                    <a href="{{ url_for('chat', user_id=f.id) }}" style="padding:4px 16px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;text-decoration:none;">💬 رسالة</a>
+                    <button onclick="removeFriend({{ f.id }})" style="padding:4px 16px;border-radius:20px;border:none;background:#EF4444;color:white;font-weight:600;cursor:pointer;">إزالة</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align:center;padding:20px;color:#A0A0B0;">لا يوجد أصدقاء حالياً</div>
+        {% endif %}
+    </div>
+
+    <!-- اقتراحات -->
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;margin-top:12px;">
+        <h3 style="margin-bottom:12px;">👤 أشخاص قد تعرفهم</h3>
+        {% if suggestions %}
+            {% for s in suggestions %}
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2D2D44;">
+                <img src="{{ s.avatar }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;cursor:pointer;" onclick="window.location.href='/profile/{{ s.username }}'">
+                <div style="flex:1;cursor:pointer;" onclick="window.location.href='/profile/{{ s.username }}'">
+                    <div style="font-weight:600;">{{ s.full_name }}</div>
+                    <div style="font-size:12px;color:#A0A0B0;">@{{ s.username }}</div>
+                </div>
+                <button onclick="addFriend({{ s.id }})" style="padding:4px 16px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">➕ إضافة</button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align:center;padding:20px;color:#A0A0B0;">لا توجد اقتراحات حالياً</div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    }
+
+    // قبول طلب صداقة + فتح الدردشة
+    async function acceptFriend(userId) {
+        try {
+            const res = await fetch(`/api/friends/accept/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                showToast('✅ ' + data.message);
+                if (data.chat_url) {
+                    setTimeout(() => {
+                        window.location.href = data.chat_url;
+                    }, 1000);
+                } else {
+                    location.reload();
+                }
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    async function rejectFriend(userId) {
+        try {
+            const res = await fetch(`/api/friends/reject/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ تم رفض الطلب');
+                location.reload();
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    async function removeFriend(userId) {
+        if (!confirm('هل أنت متأكد من إزالة هذا الصديق؟')) return;
+        try {
+            const res = await fetch(`/api/friends/remove/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ ' + data.message);
+                location.reload();
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    async function addFriend(userId) {
+        try {
+            const res = await fetch(`/api/friends/request/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ ' + data.message);
+                location.reload();
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+</script>
+{% endblock %}

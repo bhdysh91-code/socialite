@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المنشورات{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2>📝 إدارة المنشورات ({{ posts|length }})</h2>
+            <a href="{{ url_for('admin.dashboard') }}" style="color:#8B5CF6;text-decoration:none;">← العودة</a>
+        </div>
+        
+        {% for p in posts %}
+        <div style="padding:10px 0;border-bottom:1px solid #2D2D44;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <img src="{{ p.author.avatar }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+                <div>
+                    <div style="font-weight:600;font-size:13px;">{{ p.author.full_name }}</div>
+                    <div style="font-size:11px;color:#A0A0B0;">{{ p.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                <button onclick="deletePost({{ p.id }})" style="margin-right:auto;padding:4px 12px;border-radius:12px;border:none;background:#EF4444;color:white;font-size:12px;cursor:pointer;">🗑️ حذف</button>
+            </div>
+            <div style="font-size:14px;color:#A0A0B0;margin-top:4px;">{{ p.text }}</div>
+            {% if p.image %}<img src="{{ p.image }}" style="max-height:100px;border-radius:8px;margin-top:4px;">{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    }
+
+    async function deletePost(postId) {
+        if (!confirm('هل أنت متأكد من حذف هذا المنشور؟')) return;
+        try {
+            const res = await fetch(`/admin/posts/${postId}/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message);
+                setTimeout(() => location.reload(), 1000);
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+</script>
+{% endblock %}

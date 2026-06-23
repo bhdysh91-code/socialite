@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile_user.full_name }} - الملف الشخصي{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;border:1px solid #2D2D44;overflow:hidden;">
+        <div style="height:150px;background:linear-gradient(135deg,#8B5CF6,#EC4899);position:relative;">
+            <img src="{{ profile_user.avatar }}" style="position:absolute;bottom:-50px;right:20px;width:100px;height:100px;border-radius:50%;border:4px solid #1A1A2E;object-fit:cover;">
+        </div>
+        <div style="padding:60px 20px 20px;">
+            <div style="font-size:24px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                {{ profile_user.full_name }}
+                {% if profile_user.verified %}
+                <i class="fas fa-check-circle" style="color:#1877f2;font-size:20px;"></i>
+                {% endif %}
+                {% if profile_user.is_admin %}
+                <span style="background:#8B5CF6;padding:2px 10px;border-radius:12px;font-size:12px;color:white;">مدير</span>
+                {% endif %}
+            </div>
+            <div style="color:#A0A0B0;font-size:14px;margin-top:4px;">@{{ profile_user.username }}</div>
+            <div style="margin-top:12px;display:flex;gap:24px;">
+                <div><span style="font-weight:700;font-size:18px;">{{ posts|length }}</span> <span style="color:#A0A0B0;">منشورات</span></div>
+                <div><span style="font-weight:700;font-size:18px;">0</span> <span style="color:#A0A0B0;">أصدقاء</span></div>
+            </div>
+
+            <!-- ✅ زر تشغيل/إيقاف التشفير (يظهر فقط للمستخدم نفسه) -->
+            {% if user.id == profile_user.id %}
+            <div style="margin-top:16px;padding:12px;background:#2D2D44;border-radius:12px;border:1px solid #3D3D5C;">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <span style="font-weight:600;font-size:15px;">🔐 التشفير التلقائي</span>
+                        <span style="font-size:12px;color:#A0A0B0;display:block;">الرسائل تصل مشفرة للمستلمين</span>
+                    </div>
+                    <button onclick="toggleEncryption()" id="encryptionToggle" style="padding:8px 24px;border-radius:20px;border:none;font-weight:700;cursor:pointer;transition:all 0.3s;font-size:14px;background:{% if user.encryption_enabled %}#10B981{% else %}#EF4444{% endif %};color:white;">
+                        {% if user.encryption_enabled %}🟢 مفعل{% else %}🔴 معطل{% endif %}
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.id != profile_user.id %}
+            <button onclick="addFriend({{ profile_user.id }})" style="margin-top:12px;padding:8px 24px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">
+                ➕ إضافة صديق
+            </button>
+            {% endif %}
+
+            <!-- ✅ أزرار المكالمات -->
+            {% if user.id != profile_user.id %}
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                <a href="{{ url_for('calls.call_audio', user_id=profile_user.id) }}" style="padding:10px 20px;border-radius:10px;border:none;background:#10B981;color:white;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-phone"></i> مكالمة صوتية
+                </a>
+                <a href="{{ url_for('calls.call_video', user_id=profile_user.id) }}" style="padding:10px 20px;border-radius:10px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-video"></i> مكالمة فيديو
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top:12px;background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+        <h3 style="margin-bottom:12px;">📝 المنشورات</h3>
+        {% if posts %}
+            {% for post in posts %}
+            <div style="padding:8px 0;border-bottom:1px solid #2D2D44;">
+                <div style="font-size:14px;">{{ post.text }}</div>
+                <div style="font-size:12px;color:#A0A0B0;margin-top:4px;">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align:center;padding:20px;color:#A0A0B0;">لا توجد منشورات</div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    }
+
+    async function toggleEncryption() {
+        try {
+            const res = await fetch('/profile/toggle-encryption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                const btn = document.getElementById('encryptionToggle');
+                if (data.encryption_enabled) {
+                    btn.textContent = '🟢 مفعل';
+                    btn.style.background = '#10B981';
+                } else {
+                    btn.textContent = '🔴 معطل';
+                    btn.style.background = '#EF4444';
+                }
+                showToast(data.message);
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    async function addFriend(userId) {
+        try {
+            const res = await fetch(`/friends/request/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ ' + data.message);
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+</script>
+{% endblock %}

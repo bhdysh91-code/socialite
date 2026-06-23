@@ -1,0 +1,270 @@
+nohup: ignoring input
+
+==================================================
+🌟 Socialite - التطبيق الجديد
+==================================================
+🌐 http://localhost:5000
+👑 admin / admin123
+👤 أي مستخدم: 123456
+==================================================
+
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://100.93.90.118:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 361-287-181
+/data/data/com.termux/files/home/facebook-real/app.py:23: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  return User.query.get(int(user_id))
+127.0.0.1 - - [23/Jun/2026 16:17:04] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:17:05] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:17:05] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 16:17:05] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 16:17:05] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 16:17:05] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 16:17:05] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 16:17:06] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:17:06] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:17:06] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 16:17:06] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 16:17:06] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 16:17:06] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 16:17:06] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 16:17:37] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:17:40] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:17:40] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:17:41] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:17:43] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:18:07] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:20:50] "[32mHEAD / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:20:50] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:20:50] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:20:50] "HEAD /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:20:50] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:20:50] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:20:51] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:20:51] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:20:52] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:20:52] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:20:55] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:20:56] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:20:56] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:20:57] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:20:57] "[33mHEAD /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:23:22] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:22] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:22] "[32mHEAD / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:23] "HEAD /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:23] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:23] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:24] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:24] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:24] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:24] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:27] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:28] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:28] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:28] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:29] "[33mHEAD /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:23:40] "[32mHEAD / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:40] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:40] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:41] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:41] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:41] "HEAD /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:41] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:41] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:42] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:42] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:45] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:46] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:46] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:23:47] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:23:47] "[33mHEAD /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:24:34] "[32mHEAD / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:24:34] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:24:35] "HEAD /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:24:35] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:24:35] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:24:35] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:24:35] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:24:36] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:24:36] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:24:36] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:24:40] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:24:40] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:24:40] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:24:41] "GET /auth/login?next=%2F HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:24:41] "[33mHEAD /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:25:44] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:25:44] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:26:18] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:26:52] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:26:52] "HEAD /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:26:52] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:26:52] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:26:52] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:26:54] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:26:55] "[33mHEAD /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:40:48] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:40:48] "HEAD /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:40:49] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:40:49] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:40:49] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:40:52] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:40:52] "[33mHEAD /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:43:22] "[32mGET /?v=2 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:43:22] "[32mGET /?v=2 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:43:22] "[32mHEAD /?v=2 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:43:22] "HEAD /auth/login?next=%2F%3Fv%3D2 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:43:22] "GET /auth/login?next=%2F%3Fv%3D2 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:43:22] "GET /auth/login?next=%2F%3Fv%3D2 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:43:23] "[32mGET /?v=2 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:43:23] "[32mGET /?v=2 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:43:24] "GET /auth/login?next=%2F%3Fv%3D2 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:43:24] "GET /auth/login?next=%2F%3Fv%3D2 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:43:26] "[32mGET /?v=2 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:43:27] "GET /auth/login?next=%2F%3Fv%3D2 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:43:27] "[32mGET /?v=2 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 16:43:27] "GET /auth/login?next=%2F%3Fv%3D2 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:43:28] "[33mHEAD /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 16:44:08] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:44:09] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:44:09] "HEAD /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:44:09] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:44:09] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:44:11] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 16:44:12] "[33mHEAD /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 17:53:55] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 17:53:55] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:53:55] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:53:56] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:53:57] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:53:57] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:53:57] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 17:53:57] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:53:57] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:53:57] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:53:57] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:00] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:12] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:12] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:12] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:14] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:19] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:21] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:27] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:27] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:27] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:30] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:30] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:54:37] "GET /notifications HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:37] "GET /static/manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:37] "GET /static/icons/icon-192.png HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:38] "GET /static/sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:38] "GET /static/icons/icon-96.png HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:38] "[33mGET /static/style.css HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 17:54:38] "[33mGET /static/script.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 17:54:38] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:40] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:43] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:44] "GET /static/icons/icon-384.png HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:44] "[36mGET /static/icons/icon-96.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 17:54:46] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:49] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:52] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:55] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:54:58] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:01] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:04] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:07] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:10] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:10] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:11] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:11] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:11] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 17:55:11] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:11] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:12] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:12] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:13] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:16] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:19] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:22] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:25] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:28] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:29] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:29] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:29] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 17:55:29] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:29] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:29] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:31] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:34] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:36] "GET /messages/ HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:37] "[36mGET /static/manifest.json HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 17:55:37] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:38] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:38] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:38] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 17:55:38] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:38] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:38] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:38] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:40] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:43] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:43] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:43] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:43] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:46] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:49] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:52] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:55] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:55] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:55] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 17:55:55] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:55] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:55] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 17:55:55] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:55:58] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:56:01] "[33mPOST /posts/api/like/3 HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 17:56:01] "GET /calls/api/check/15 HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:56:25] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 17:56:55] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 18:03:38] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 18:03:38] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 18:03:38] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 18:03:38] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 18:03:38] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 18:03:43] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 18:03:44] "GET /ads/api/active HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 18:03:44] "[36mGET /static/uploads/ads/ad_20260622165647_10.jpg HTTP/1.1[0m" 304 -
+127.0.0.1 - - [23/Jun/2026 18:03:44] "[35m[1mGET /static/uploads/ads/ad_video_20260622165647_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 18:03:44] "[35m[1mGET /static/uploads/ads/ad_video_20260623073902_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 18:03:44] "[35m[1mGET /static/uploads/ads/ad_video_20260623074013_10.mp4 HTTP/1.1[0m" 206 -
+127.0.0.1 - - [23/Jun/2026 18:03:46] "[32mGET /auth/logout HTTP/1.1[0m" 302 -
+127.0.0.1 - - [23/Jun/2026 18:03:46] "GET /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 18:37:55] "GET /auth/login HTTP/1.1" 200 -
+127.0.0.1 - - [23/Jun/2026 18:37:56] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [23/Jun/2026 18:37:58] "GET /auth/login HTTP/1.1" 200 -
+ * Detected change in '/data/data/com.termux/files/home/facebook-real/models.py', reloading
+
+==================================================
+🌟 Socialite - التطبيق الجديد
+==================================================
+🌐 http://localhost:5000
+👑 admin / admin123
+👤 أي مستخدم: 123456
+==================================================
+
+ * Restarting with stat
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/home/facebook-real/app.py", line 5, in <module>
+    from models import db, User
+  File "/data/data/com.termux/files/home/facebook-real/models.py", line 22
+    encryption_enabled = db.Column(db.Boolean, default=False)
+IndentationError: unexpected indent

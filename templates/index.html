@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socialite - الرئيسية</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#0F0F1A;color:#fff;direction:rtl;padding:16px;max-width:600px;margin:0 auto;padding-bottom:80px}
+        .header{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #2D2D44;margin-bottom:16px}
+        .logo{font-size:24px;font-weight:900;background:linear-gradient(135deg,#8B5CF6,#EC4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .header-actions{display:flex;align-items:center;gap:12px}
+        .header-actions a{color:#A0A0B0;text-decoration:none;font-size:18px}
+        .user-info{display:flex;align-items:center;gap:10px;cursor:pointer}
+        .user-info img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+        .user-info .name{font-size:14px;font-weight:600}
+        .create-post{background:#1A1A2E;border-radius:12px;padding:12px;border:1px solid #2D2D44;display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+        .create-post input{flex:1;padding:10px 16px;border-radius:20px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;font-size:14px;outline:none;min-width:120px}
+        .create-post input:focus{border-color:#8B5CF6}
+        .create-post .actions{display:flex;gap:6px;flex-wrap:wrap}
+        .create-post .actions button{padding:8px 16px;border-radius:20px;border:none;font-weight:600;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;transition:all 0.2s}
+        .create-post .actions .post-btn{background:#8B5CF6;color:white}
+        .create-post .actions .post-btn:hover{background:#7C3AED}
+        .create-post .actions .photo-btn{background:#10B981;color:white}
+        .create-post .actions .photo-btn:hover{background:#059669}
+        .create-post .actions .video-btn{background:#EC4899;color:white}
+        .create-post .actions .video-btn:hover{background:#DB2777}
+        .post{background:#1A1A2E;border-radius:12px;border:1px solid #2D2D44;margin-bottom:12px;overflow:hidden}
+        .post-header{padding:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .post-header img{width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer}
+        .post-header .name{font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:4px}
+        .post-header .time{font-size:12px;color:#A0A0B0}
+        .post-header .call-buttons{display:flex;gap:6px;margin-right:auto}
+        .post-header .call-buttons a{color:#A0A0B0;text-decoration:none;font-size:15px;padding:4px 8px;border-radius:50%;background:#2D2D44;transition:all 0.3s}
+        .post-header .call-buttons a:hover{background:#3D3D5C}
+        .post-header .call-buttons .audio{color:#10B981}
+        .post-header .call-buttons .video{color:#8B5CF6}
+        .post-text{padding:0 12px 12px;font-size:15px;line-height:1.6;white-space:pre-wrap}
+        .post-image{width:100%;max-height:400px;object-fit:cover;border-radius:8px;margin-top:8px}
+        .post-video{width:100%;max-height:400px;border-radius:8px;margin-top:8px;background:#000}
+        .post-actions{display:flex;justify-content:space-around;padding:8px 0;border-top:1px solid #2D2D44;flex-wrap:wrap}
+        .post-actions button{background:none;border:none;color:#A0A0B0;cursor:pointer;font-size:13px;padding:6px 12px;border-radius:8px;transition:all 0.3s;display:flex;align-items:center;gap:4px}
+        .post-actions button:hover{background:#2D2D44;color:#8B5CF6}
+        .post-actions button.liked{color:#EC4899}
+        .post-actions .hologram-btn{color:#8B5CF6}
+        .post-actions .hologram-btn:hover{color:#8B5CF6;text-shadow:0 0 20px rgba(139,92,246,0.5)}
+        .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#1A1A2E;color:#fff;padding:10px 24px;border-radius:30px;font-size:14px;border:1px solid #2D2D44;opacity:0;transition:all 0.3s;z-index:999}
+        .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+        .bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:600px;margin:0 auto;background:#1A1A2E;border-top:1px solid #2D2D44;display:flex;justify-content:space-around;padding:8px 0 12px;z-index:100}
+        .bottom-nav a{color:#A0A0B0;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;padding:4px 8px}
+        .bottom-nav a.active{color:#8B5CF6}
+        .bottom-nav a i{font-size:22px}
+        .bottom-nav .camera i{font-size:32px;color:#8B5CF6}
+        .empty-state{text-align:center;padding:40px;color:#A0A0B0}
+        .empty-state i{font-size:48px}
+        .empty-state p{margin-top:12px}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center}
+        .modal.active{display:flex}
+        .modal-content{background:#1A1A2E;border-radius:16px;padding:24px;max-width:400px;width:90%;border:1px solid #2D2D44}
+        .modal-content h3{margin-bottom:16px;color:#fff}
+        .modal-content input[type="file"]{width:100%;padding:12px;border:1px solid #2D2D44;border-radius:8px;background:#2D2D44;color:#fff;margin-bottom:12px}
+        .modal-content .preview{text-align:center;padding:10px;display:none}
+        .modal-content .preview img,.modal-content .preview video{max-width:100%;max-height:200px;border-radius:8px}
+        .modal-content .buttons{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+        .modal-content .buttons button{padding:8px 20px;border-radius:20px;border:none;font-weight:600;cursor:pointer}
+        .modal-content .buttons .cancel{background:#EF4444;color:white}
+        .modal-content .buttons .submit{background:#8B5CF6;color:white}
+        
+        /* ✅ العلامة الزرقاء */
+        .verified-badge{color:#1877f2;font-size:14px;margin-right:2px}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Socialite</div>
+        <div class="header-actions">
+            <a href="{{ url_for('pages.search') }}" title="بحث"><i class="fas fa-search"></i></a>
+            <a href="{{ url_for('pages.notifications') }}" title="إشعارات"><i class="fas fa-bell"></i></a>
+            <div class="user-info" onclick="window.location.href='{{ url_for('profile.profile') }}'">
+                <span class="name">
+                    {{ user.full_name }}
+                    {% if user.verified %}
+                    <i class="fas fa-check-circle verified-badge"></i>
+                    {% endif %}
+                </span>
+                <img src="{{ user.avatar }}" alt="">
+            </div>
+            <a href="{{ url_for('auth.logout') }}" style="color:#EF4444;font-size:14px;text-decoration:none;">خروج</a>
+        </div>
+    </div>
+
+    <div class="create-post">
+        <img src="{{ user.avatar }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" alt="">
+        <input type="text" id="postInput" placeholder="بم تفكر؟" onkeypress="if(event.key==='Enter') createPost()">
+        <div class="actions">
+            <button class="post-btn" onclick="createPost()"><i class="fas fa-pen"></i> نشر</button>
+            <button class="photo-btn" onclick="openMediaPicker('image')"><i class="fas fa-image"></i> صورة</button>
+            <button class="video-btn" onclick="openMediaPicker('video')"><i class="fas fa-video"></i> فيديو</button>
+        </div>
+    </div>
+    <!-- ✅ الإعلانات -->
+<div id="adsContainer" style="margin-bottom:16px;"></div>
+    <div id="postsContainer">
+        {% if posts %}
+            {% for post in posts %}
+            <div class="post">
+                <div class="post-header">
+                    <img src="{{ post.author.avatar }}" alt="" onclick="window.location.href='{{ url_for('profile.view_profile', username=post.author.username) }}'">
+                    <div>
+                        <div class="name" onclick="window.location.href='{{ url_for('profile.view_profile', username=post.author.username) }}'">
+                            {{ post.author.full_name }}
+                            {% if post.author.verified %}
+                            <i class="fas fa-check-circle verified-badge"></i>
+                            {% endif %}
+                        </div>
+                        <div class="time">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </div>
+                    <div class="call-buttons">
+                        <a href="{{ url_for('calls.call_audio', user_id=post.author.id) }}" class="audio" title="مكالمة صوتية"><i class="fas fa-phone"></i></a>
+                        <a href="{{ url_for('calls.call_video', user_id=post.author.id) }}" class="video" title="مكالمة فيديو"><i class="fas fa-video"></i></a>
+                    </div>
+                </div>
+                <div class="post-text">{{ post.text }}</div>
+                {% if post.image %}
+                <img src="{{ post.image }}" class="post-image" alt="">
+                {% endif %}
+                {% if post.video %}
+                <video src="{{ post.video }}" class="post-video" controls></video>
+                {% endif %}
+                <div class="post-actions">
+                    <button onclick="toggleLike({{ post.id }})" class="{% if post.liked %}liked{% endif %}">
+                        <i class="fas fa-heart"></i> <span id="likeCount-{{ post.id }}">{{ post.likes|length }}</span>
+                    </button>
+                    <button onclick="toggleComments({{ post.id }})">
+                        <i class="fas fa-comment"></i> <span id="commentCount-{{ post.id }}">{{ post.comments|length }}</span>
+                    </button>
+                    <button onclick="sharePost({{ post.id }})">
+                        <i class="fas fa-share"></i> مشاركة
+                    </button>
+                    <button onclick="window.location.href='/hologram/{{ post.id }}'" class="hologram-btn">
+                        <i class="fas fa-cube"></i> 3D
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>لا توجد منشورات، كن أول من يشارك!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="bottom-nav">
+        <a href="{{ url_for('pages.index') }}" class="active"><i class="fas fa-home"></i>الرئيسية</a>
+        <a href="{{ url_for('pages.stories') }}"><i class="fas fa-circle-play"></i>قصص</a>
+        <a href="{{ url_for('pages.camera') }}" class="camera"><i class="fas fa-plus-circle"></i></a>
+        <a href="{{ url_for('messages.messages') }}"><i class="fas fa-comment-dots"></i>رسائل</a>
+        <a href="{{ url_for('profile.profile') }}"><i class="fas fa-user"></i>الملف</a>
+    </div>
+
+    <!-- نافذة اختيار الملفات -->
+    <div class="modal" id="mediaModal">
+        <div class="modal-content">
+            <h3 id="mediaModalTitle">📸 اختيار صورة</h3>
+            <input type="file" id="mediaFileInput" accept="image/*,video/*">
+            <div class="preview" id="mediaPreview">
+                <img id="imagePreview" style="display:none;">
+                <video id="videoPreview" style="display:none;background:#000;" controls></video>
+            </div>
+            <div class="buttons">
+                <button class="cancel" onclick="closeMediaPicker()">إلغاء</button>
+                <button class="submit" onclick="uploadMedia()">رفع</button>
+            </div>
+        </div>
+    </div>
+
+    </script>
+</body>
+</html>
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timeout);
+        t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    let selectedMedia = null;
+    let mediaType = null;
+
+    function openMediaPicker(type) {
+        mediaType = type;
+        const modal = document.getElementById('mediaModal');
+        const input = document.getElementById('mediaFileInput');
+        const title = document.getElementById('mediaModalTitle');
+        if (type === 'image') {
+            title.textContent = '📸 اختيار صورة';
+            input.accept = 'image/*';
+        } else {
+            title.textContent = '🎬 اختيار فيديو';
+            input.accept = 'video/*';
+        }
+        input.value = '';
+        document.getElementById('mediaPreview').style.display = 'none';
+        document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('videoPreview').style.display = 'none';
+        modal.classList.add('active');
+    }
+
+    function closeMediaPicker() {
+        document.getElementById('mediaModal').classList.remove('active');
+        selectedMedia = null;
+        mediaType = null;
+    }
+
+    document.getElementById('mediaFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            selectedMedia = event.target.result;
+            const preview = document.getElementById('mediaPreview');
+            const imgPreview = document.getElementById('imagePreview');
+            const videoPreview = document.getElementById('videoPreview');
+            preview.style.display = 'block';
+            if (file.type.startsWith('image/')) {
+                imgPreview.style.display = 'block';
+                videoPreview.style.display = 'none';
+                imgPreview.src = selectedMedia;
+            } else if (file.type.startsWith('video/')) {
+                videoPreview.style.display = 'block';
+                imgPreview.style.display = 'none';
+                videoPreview.src = selectedMedia;
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    async function uploadMedia() {
+        if (!selectedMedia) {
+            showToast('⚠️ الرجاء اختيار ملف');
+            return;
+        }
+        const caption = document.getElementById('postInput').value.trim();
+        const text = caption || (mediaType === 'video' ? '🎬 فيديو جديد' : '📸 صورة جديدة');
+        try {
+            const body = { text: text };
+            if (mediaType === 'image') body.image = selectedMedia;
+            else body.video = selectedMedia;
+            const res = await fetch('/posts/api/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('✅ تم النشر!');
+                closeMediaPicker();
+                document.getElementById('postInput').value = '';
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            console.error('Error:', e);
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    async function createPost() {
+        const input = document.getElementById('postInput');
+        const text = input.value.trim();
+        if (!text) {
+            showToast('✏️ اكتب شيئاً');
+            return;
+        }
+        try {
+            const res = await fetch('/posts/api/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                input.value = '';
+                showToast('✅ تم النشر بنجاح!');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showToast('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            console.error('Error:', e);
+            showToast('❌ حدث خطأ في الاتصال');
+        }
+    }
+
+    async function toggleLike(postId) {
+        try {
+            const res = await fetch(`/posts/api/like/${postId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+            const data = await res.json();
+            if (data.success) {
+                const btn = document.querySelector(`#post-${postId} .post-actions button:first-child`);
+                if (btn) btn.classList.toggle('liked');
+                document.getElementById(`likeCount-${postId}`).textContent = data.likes_count;
+            }
+        } catch(e) { console.error('Error:', e); }
+    }
+
+    function toggleComments(postId) {
+        const section = document.getElementById(`comments-${postId}`);
+        if (section) {
+            section.style.display = section.style.display === 'block' ? 'none' : 'block';
+        }
+    }
+
+    async function sharePost(postId) {
+        try {
+            await navigator.clipboard.writeText(`https://socialite.com/post/${postId}`);
+            showToast('🔗 تم نسخ الرابط');
+        } catch { showToast('🔗 تم مشاركة المنشور'); }
+    }
+
+    // ================================================================
+    // ✅ الإعلانات
+    // ================================================================
+    async function loadAds() {
+        try {
+            console.log('🔄 جاري تحميل الإعلانات...');
+            const res = await fetch('/ads/api/active');
+            const ads = await res.json();
+            console.log('📊 عدد الإعلانات:', ads.length);
+            
+            const container = document.getElementById('adsContainer');
+            if (!container) {
+                console.error('❌ adsContainer غير موجود');
+                return;
+            }
+            
+            if (ads.length === 0) {
+                container.style.display = 'none';
+                console.log('ℹ️ لا توجد إعلانات نشطة');
+                return;
+            }
+            
+            container.style.display = 'block';
+            container.innerHTML = ads.map(ad => `
+                <div class="post" style="border:2px solid #8B5CF6;position:relative;margin-bottom:12px;">
+                    <div style="position:absolute;top:8px;left:8px;background:#8B5CF6;color:white;padding:2px 12px;border-radius:12px;font-size:11px;font-weight:600;z-index:5;">
+                        📢 إعلان
+                    </div>
+                    <div class="post-header">
+                        <div>
+                            <div style="font-weight:700;font-size:15px;color:#8B5CF6;">${ad.title}</div>
+                            <div style="font-size:12px;color:#A0A0B0;">${ad.company || 'شركة'}</div>
+                        </div>
+                    </div>
+                    <div class="post-text">${ad.text}</div>
+                    ${ad.image ? `<img src="${ad.image}" class="post-image" alt="" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;margin-top:8px;">` : ''}
+                    ${ad.video ? `<video src="${ad.video}" class="post-video" controls style="width:100%;max-height:300px;border-radius:8px;margin-top:8px;background:#000;"></video>` : ''}
+                    <div style="padding:8px 12px;border-top:1px solid #2D2D44;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <span style="font-size:12px;color:#A0A0B0;">👁️ ${ad.views} مشاهدة</span>
+                        ${ad.link ? `<a href="${ad.link.startsWith('http') ? ad.link : 'https://' + ad.link}" target="_blank" onclick="clickAd(${ad.id})" style="padding:6px 20px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;text-decoration:none;cursor:pointer;">زيارة الموقع</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            console.log('✅ تم عرض الإعلانات');
+            
+        } catch(e) {
+            console.error('❌ خطأ في تحميل الإعلانات:', e);
+        }
+    }
+
+    async function clickAd(adId) {
+        try {
+            await fetch(`/ads/api/click/${adId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+        } catch(e) {
+            console.error('Error clicking ad:', e);
+        }
+    }
+
+    // ================================================================
+    // ✅ بدء التشغيل
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 تحميل الصفحة الرئيسية...');
+        loadAds();
+        setInterval(loadAds, 30000);
+    });
+</script>

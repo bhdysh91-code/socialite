@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}الكاميرا{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:20px;border:1px solid #2D2D44;text-align:center;">
+        <h2 style="margin-bottom:16px;">📸 الكاميرا</h2>
+        <div style="background:#0F0F1A;border-radius:12px;padding:40px;border:1px solid #2D2D44;">
+            <video id="video" autoplay style="width:100%;max-height:400px;border-radius:12px;background:#000;"></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <img id="photo" style="width:100%;max-height:400px;border-radius:12px;display:none;margin-top:12px;">
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap;">
+            <button onclick="startCamera()" style="padding:10px 24px;border-radius:10px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">
+                <i class="fas fa-camera"></i> تشغيل الكاميرا
+            </button>
+            <button onclick="capturePhoto()" style="padding:10px 24px;border-radius:10px;border:none;background:#EC4899;color:white;font-weight:600;cursor:pointer;">
+                <i class="fas fa-camera"></i> التقاط صورة
+            </button>
+            <button onclick="stopCamera()" style="padding:10px 24px;border-radius:10px;border:none;background:#EF4444;color:white;font-weight:600;cursor:pointer;">
+                <i class="fas fa-stop"></i> إيقاف
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let stream = null;
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const photo = document.getElementById('photo');
+
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            video.srcObject = stream;
+            await video.play();
+            showToast('📸 الكاميرا تعمل');
+        } catch(e) {
+            showToast('❌ لا يمكن الوصول إلى الكاميرا');
+        }
+    }
+
+    function capturePhoto() {
+        if (!stream) {
+            showToast('⚠️ قم بتشغيل الكاميرا أولاً');
+            return;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        photo.src = canvas.toDataURL('image/jpeg');
+        photo.style.display = 'block';
+        showToast('✅ تم التقاط الصورة!');
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+            video.srcObject = null;
+            showToast('⏹️ تم إيقاف الكاميرا');
+        }
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+    }
+</script>
+{% endblock %}

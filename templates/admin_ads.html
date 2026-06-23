@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة الإعلانات{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2>📢 إدارة الإعلانات</h2>
+            <div style="display:flex;gap:8px;">
+                <button onclick="showCreateAd()" style="padding:8px 20px;border-radius:12px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">
+                    ➕ إضافة إعلان
+                </button>
+                <a href="{{ url_for('admin.dashboard') }}" style="color:#8B5CF6;text-decoration:none;">← العودة</a>
+            </div>
+        </div>
+        
+        <!-- قائمة الإعلانات -->
+        {% if ads %}
+            {% for ad in ads %}
+            <div style="padding:12px;border-bottom:1px solid #2D2D44;{% if not ad.is_active or ad.is_expired() %}opacity:0.5;{% endif %}">
+                <div style="display:flex;gap:12px;align-items:center;">
+                    {% if ad.image %}
+                    <img src="{{ ad.image }}" style="width:60px;height:60px;border-radius:8px;object-fit:cover;">
+                    {% endif %}
+                    <div style="flex:1;">
+                        <div style="font-weight:600;">{{ ad.title }}</div>
+                        <div style="font-size:13px;color:#A0A0B0;">{{ ad.company or 'بدون شركة' }}</div>
+                        <div style="font-size:12px;color:#65676b;">
+                            ⏳ ينتهي: {{ ad.expires_at.strftime('%Y-%m-%d %H:%M') if ad.expires_at else 'غير محدد' }}
+                            | 👁️ {{ ad.views }} مشاهدة | 👆 {{ ad.clicks }} نقرة
+                        </div>
+                    </div>
+                    <div>
+                        {% if ad.is_active and not ad.is_expired() %}
+                        <span style="color:#10B981;">🟢 نشط</span>
+                        {% else %}
+                        <span style="color:#EF4444;">🔴 منتهي</span>
+                        {% endif %}
+                    </div>
+                    <button onclick="deleteAd({{ ad.id }})" style="padding:4px 12px;border-radius:12px;border:none;background:#EF4444;color:white;cursor:pointer;">🗑️</button>
+                </div>
+                <div style="font-size:14px;color:#A0A0B0;margin-top:4px;">{{ ad.text }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align:center;padding:40px;color:#A0A0B0;">
+                <i class="fas fa-ad" style="font-size:48px;"></i>
+                <p style="margin-top:12px;">لا توجد إعلانات</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- نافذة إنشاء إعلان -->
+<div id="createAdModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#1A1A2E;border-radius:16px;padding:24px;max-width:500px;width:90%;border:1px solid #2D2D44;max-height:80vh;overflow-y:auto;">
+        <h3 style="margin-bottom:16px;">📢 إضافة إعلان جديد</h3>
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px;">عنوان الإعلان *</label>
+            <input type="text" id="adTitle" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px;">نص الإعلان *</label>
+            <textarea id="adText" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;min-height:60px;"></textarea>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px;">اسم الشركة</label>
+            <input type="text" id="adCompany" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px;">رابط الإعلان</label>
+            <input type="text" id="adLink" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;" placeholder="https://example.com">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px;">صورة الإعلان</label>
+            <input type="file" id="adImage" accept="image/*" style="width:100%;padding:8px;border-radius:8px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;">
+            <div id="adImagePreview" style="margin-top:8px;display:none;">
+                <img id="adImagePreviewImg" style="max-width:100%;max-height:150px;border-radius:8px;">
+            </div>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px;">فيديو الإعلان</label>
+            <input type="file" id="adVideo" accept="video/*" style="width:100%;padding:8px;border-radius:8px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;">
+            <div id="adVideoPreview" style="margin-top:8px;display:none;">
+                <video id="adVideoPreviewVideo" style="max-width:100%;max-height:150px;border-radius:8px;" controls></video>
+            </div>
+        </div>
+        <div style="margin-bottom:16px;">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:4px;">مدة الإعلان (ساعات)</label>
+            <input type="number" id="adDuration" value="24" style="width:100%;padding:10px;border-radius:8px;border:1px solid #2D2D44;background:#2D2D44;color:#fff;">
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button onclick="createAd()" style="flex:1;padding:12px;border-radius:8px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">نشر الإعلان</button>
+            <button onclick="closeCreateAd()" style="padding:12px 20px;border-radius:8px;border:none;background:#EF4444;color:white;font-weight:600;cursor:pointer;">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let adImageData = null;
+    let adVideoData = null;
+    
+    function showCreateAd() {
+        document.getElementById('createAdModal').style.display = 'flex';
+    }
+    
+    function closeCreateAd() {
+        document.getElementById('createAdModal').style.display = 'none';
+        document.getElementById('adTitle').value = '';
+        document.getElementById('adText').value = '';
+        document.getElementById('adCompany').value = '';
+        document.getElementById('adLink').value = '';
+        document.getElementById('adDuration').value = '24';
+        document.getElementById('adImage').value = '';
+        document.getElementById('adVideo').value = '';
+        document.getElementById('adImagePreview').style.display = 'none';
+        document.getElementById('adVideoPreview').style.display = 'none';
+        adImageData = null;
+        adVideoData = null;
+    }
+    
+    // معاينة الصورة
+    document.getElementById('adImage').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            adImageData = event.target.result;
+            document.getElementById('adImagePreviewImg').src = adImageData;
+            document.getElementById('adImagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    // معاينة الفيديو
+    document.getElementById('adVideo').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            adVideoData = event.target.result;
+            document.getElementById('adVideoPreviewVideo').src = adVideoData;
+            document.getElementById('adVideoPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    async function createAd() {
+        const title = document.getElementById('adTitle').value.trim();
+        const text = document.getElementById('adText').value.trim();
+        const company = document.getElementById('adCompany').value.trim();
+        const link = document.getElementById('adLink').value.trim();
+        const duration = parseInt(document.getElementById('adDuration').value) || 24;
+        
+        if (!title || !text) {
+            alert('⚠️ الرجاء إدخال عنوان ونص الإعلان');
+            return;
+        }
+        
+        try {
+            const body = {
+                title: title,
+                text: text,
+                company: company,
+                link: link,
+                duration_hours: duration
+            };
+            if (adImageData) body.image = adImageData;
+            if (adVideoData) body.video = adVideoData;
+            
+            const res = await fetch('/ads/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                closeCreateAd();
+                location.reload();
+            } else {
+                alert('❌ ' + (data.error || 'حدث خطأ'));
+            }
+        } catch(e) {
+            alert('❌ حدث خطأ');
+        }
+    }
+    
+    async function deleteAd(adId) {
+        if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
+        try {
+            const res = await fetch(`/ads/delete/${adId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            }
+        } catch(e) {
+            alert('❌ حدث خطأ');
+        }
+    }
+</script>
+{% endblock %}
