@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}بحث متقدم{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;margin-bottom:16px;">
+        <h2>🔍 بحث شامل</h2>
+        <form method="GET" action="{{ url_for('pages.search_advanced') }}" style="display:flex;gap:8px;">
+            <input type="text" name="q" value="{{ query or '' }}" placeholder="ابحث عن فيديوهات، أخبار، مستخدمين..." style="flex:1;padding:12px;border-radius:20px;border:1px solid #2D2D44;background:#2D2D44;color:white;outline:none;">
+            <button type="submit" style="padding:12px 24px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">بحث</button>
+        </form>
+    </div>
+
+    {% if query %}
+        <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+            <h3>نتائج البحث عن: "{{ query }}"</h3>
+            
+            <!-- ✅ نتائج المستخدمين -->
+            {% if users %}
+            <div style="margin-top:12px;">
+                <h4>👤 مستخدمين ({{ users|length }})</h4>
+                {% for u in users %}
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2D2D44;">
+                    <img src="{{ u.avatar }}" style="width:40px;height:40px;border-radius:50%;">
+                    <div>
+                        <div style="font-weight:600;">{{ u.full_name }}</div>
+                        <div style="font-size:12px;color:#A0A0B0;">@{{ u.username }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- ✅ نتائج الأخبار -->
+            {% if articles %}
+            <div style="margin-top:12px;">
+                <h4>📰 أخبار ({{ articles|length }})</h4>
+                {% for a in articles %}
+                <div style="padding:8px 0;border-bottom:1px solid #2D2D44;">
+                    <div style="font-weight:600;">{{ a.title }}</div>
+                    <div style="font-size:13px;color:#A0A0B0;">{{ a.description[:150] }}...</div>
+                    <div style="font-size:12px;color:#65676b;">المصدر: {{ a.source }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- ✅ نتائج الفيديوهات -->
+            {% if videos %}
+            <div style="margin-top:12px;">
+                <h4>🎬 فيديوهات ({{ videos|length }})</h4>
+                {% for v in videos %}
+                <div style="padding:8px 0;border-bottom:1px solid #2D2D44;cursor:pointer;" onclick="playVideo('{{ v.video_id }}', '{{ v.title }}')">
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <img src="{{ v.thumbnail }}" style="width:80px;height:60px;border-radius:8px;object-fit:cover;">
+                        <div>
+                            <div style="font-weight:600;">{{ v.title }}</div>
+                            <div style="font-size:12px;color:#A0A0B0;">{{ v.description[:100] }}...</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if not users and not articles and not videos %}
+            <div style="text-align:center;padding:40px;color:#A0A0B0;">
+                <i class="fas fa-search" style="font-size:48px;"></i>
+                <p>لا توجد نتائج للبحث عن "{{ query }}"</p>
+            </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // ✅ دالة تشغيل الفيديو من البحث
+    function playVideo(videoId, title) {
+        const modal = document.createElement('div');
+        modal.id = 'videoModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;';
+        modal.innerHTML = `
+            <button onclick="this.parentElement.remove()" style="position:absolute;top:20px;right:20px;background:red;color:white;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;cursor:pointer;">✕</button>
+            <div style="width:100%;max-width:800px;background:black;border-radius:12px;overflow:hidden;">
+                <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" style="width:100%;height:60vh;border:none;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.title = `🎬 ${title} - Socialite`;
+    }
+</script>
+{% endblock %}

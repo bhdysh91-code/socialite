@@ -13,19 +13,25 @@
     </div>
 </div>
 
+<!-- ✅ نافذة تشغيل الفيديو داخل التطبيق -->
+<div id="videoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px;">
+    <button onclick="closeVideo()" style="position:absolute;top:20px;right:20px;background:red;color:white;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;cursor:pointer;">✕</button>
+    <div id="videoPlayerContainer" style="width:100%;max-width:800px;background:black;border-radius:12px;overflow:hidden;">
+        <video id="videoPlayer" controls style="width:100%;max-height:70vh;background:black;" autoplay></video>
+    </div>
+</div>
+
 <script>
     async function loadVideos() {
         try {
             const res = await fetch('/videos/api/videos');
             const data = await res.json();
-            
+
             if (data.success && data.videos.length > 0) {
                 const container = document.getElementById('videosContainer');
                 container.innerHTML = data.videos.map(v => `
-                    <div style="background:#1A1A2E;border-radius:12px;border:1px solid #2D2D44;margin-bottom:12px;overflow:hidden;">
-                        <a href="${v.url}" target="_blank">
-                            <img src="${v.thumbnail}" style="width:100%;border-radius:8px;">
-                        </a>
+                    <div style="background:#1A1A2E;border-radius:12px;border:1px solid #2D2D44;margin-bottom:12px;overflow:hidden;cursor:pointer;" onclick="playVideo('${v.video_id}', '${v.title}')">
+                        <img src="${v.thumbnail}" style="width:100%;border-radius:8px;">
                         <div style="padding:12px;">
                             <div style="font-weight:600;">${v.title}</div>
                             <div style="font-size:13px;color:#A0A0B0;">${v.description}</div>
@@ -49,7 +55,31 @@
             `;
         }
     }
-    
+
+    // ✅ تشغيل الفيديو داخل التطبيق (بدون يوتيوب)
+    function playVideo(videoId, title) {
+        const modal = document.getElementById('videoModal');
+        const player = document.getElementById('videoPlayer');
+        
+        // ✅ استخدام رابط مباشر من YouTube (مدمج في التطبيق)
+        player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+        modal.style.display = 'flex';
+        document.title = `🎬 ${title} - Socialite`;
+    }
+
+    function closeVideo() {
+        const modal = document.getElementById('videoModal');
+        const player = document.getElementById('videoPlayer');
+        player.src = '';
+        modal.style.display = 'none';
+        document.title = '🎬 فيديوهات - Socialite';
+    }
+
+    // ✅ إغلاق الفيديو بالضغط على Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeVideo();
+    });
+
     document.addEventListener('DOMContentLoaded', loadVideos);
 </script>
 {% endblock %}
