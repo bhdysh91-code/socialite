@@ -8,6 +8,7 @@ from routes.pages import pages_bp
 from routes.hologram import hologram_bp
 from routes.admin import admin_bp
 from routes.ads import ads_bp
+from routes.videos import videos_bp
 
 def register_routes(app):
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -20,3 +21,4 @@ def register_routes(app):
     app.register_blueprint(hologram_bp, url_prefix='/hologram')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(ads_bp, url_prefix='/ads')
+    app.register_blueprint(videos_bp, url_prefix='/videos')

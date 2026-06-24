@@ -6,8 +6,6 @@ import time
 
 pages_bp = Blueprint('pages', __name__)
 
-# ... باقي الكود
-
 @pages_bp.route('/')
 @login_required
 def index():
@@ -39,41 +37,122 @@ def camera():
 @login_required
 def stories():
     return render_template('stories.html', user=current_user)
+
 # ================================================================
 # ✅ API لجلب الأخبار يدوياً
 # ================================================================
-
 @pages_bp.route('/api/fetch-news', methods=['POST'])
-@login_required
 def fetch_news_api():
     """جلب آخر الأخبار من مصادر RSS"""
+
     try:
         import feedparser
+        import time
+        from datetime import datetime
+
         sources = [
             'https://feeds.bbci.co.uk/news/rss.xml',
             'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
-            'https://feeds.feedburner.com/alarabiya'
+            'https://rss.cnn.com/rss/edition.rss',
+            'https://www.reutersagency.com/feed/?best-topics=all',
+            'https://feeds.skynews.com/feeds/rss/world.xml',
+
+            'https://www.aljazeera.net/feed/rss',
+            'https://www.alarabiya.net/feed/rss',
+            'https://www.skynewsarabia.com/web/rss',
+            'https://arabic.cnn.com/rss',
+
+            'https://www.sabq.org/rss',
+            'https://www.okaz.com.sa/rss',
+            'https://www.alriyadh.com/rss.xml',
+            'https://www.alwatan.com.sa/rss',
+            'https://www.aleqt.com/rss',
+
+            'https://www.albayan.ae/feed/rss',
+            'https://www.emaratalyoum.com/feed/rss',
+
+            'https://www.kooora.com/rss.aspx',
+            'https://www.yallakora.com/rss',
+            'https://www.espn.com/espn/rss/news',
+            'https://sports.yahoo.com/rss/',
+            'https://www.skysports.com/rss/12040',
+
+            'https://techcrunch.com/feed/',
+            'https://www.theverge.com/rss/index.xml',
+            'https://www.wired.com/feed/rss',
+            'https://feeds.arstechnica.com/arstechnica/index',
+
+            'https://www.cnbc.com/id/100003114/device/rss/rss.html',
+            'https://www.marketwatch.com/rss/topstories',
+
+            'https://www.sciencedaily.com/rss/all.xml',
         ]
+
         count = 0
+
         for source in sources:
-            feed = feedparser.parse(source)
-            for entry in feed.entries[:5]:  # 5 مقالات من كل مصدر
-                existing = Article.query.filter_by(link=entry.link).first()
-                if not existing:
+            try:
+                feed = feedparser.parse(source)
+
+                for entry in feed.entries[:5]:
+
+                    if not getattr(entry, 'link', None):
+                        continue
+
+                    existing = Article.query.filter_by(
+                        link=entry.link
+                    ).first()
+
+                    if existing:
+                        continue
+
+                    description = ''
+
+                    if hasattr(entry, 'description'):
+                        description = entry.description[:300]
+
+                    image_url = None
+
+                    if hasattr(entry, 'media_content'):
+                        try:
+                            image_url = entry.media_content[0]['url']
+                        except:
+                            pass
+
+                    published_at = datetime.utcnow()
+
+                    if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                        published_at = datetime.fromtimestamp(
+                            time.mktime(entry.published_parsed)
+                        )
+
                     article = Article(
-                        title=entry.title,
-                        description=entry.description[:200] if hasattr(entry, 'description') else '',
+                        title=getattr(entry, 'title', 'بدون عنوان'),
+                        description=description,
                         link=entry.link,
-                        source=feed.feed.title if hasattr(feed, 'feed') and hasattr(feed.feed, 'title') else source,
-                        image_url=entry.get('media_content', [{}])[0].get('url') if hasattr(entry, 'media_content') else None,
-                        published_at=datetime.fromtimestamp(time.mktime(entry.published_parsed)) if hasattr(entry, 'published_parsed') else datetime.utcnow()
+                        source=getattr(feed.feed, 'title', source),
+                        image_url=image_url,
+                        published_at=published_at
                     )
+
                     db.session.add(article)
                     count += 1
+
+            except Exception as e:
+                print(f"خطأ في المصدر {source}: {e}")
+
         db.session.commit()
-        return jsonify({'success': True, 'count': count})
+
+        return jsonify({
+            'success': True,
+            'count': count
+        })
+
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @pages_bp.route('/notifications')
 @login_required
@@ -86,6 +165,7 @@ def notifications():
         n.read = True
     db.session.commit()
     return render_template('notifications.html', user=current_user, notifications=notifs)
+
 # ================================================================
 # ✅ صفحة عرض الأخبار
 # ================================================================
