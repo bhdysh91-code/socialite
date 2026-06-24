@@ -26,6 +26,19 @@
         .create-post .actions .photo-btn:hover{background:#059669}
         .create-post .actions .video-btn{background:#EC4899;color:white}
         .create-post .actions .video-btn:hover{background:#DB2777}
+
+        /* ✅ فيديوهات مقترحة */
+        .suggested-videos{background:#1A1A2E;border-radius:12px;padding:12px;border:1px solid #2D2D44;margin-bottom:16px}
+        .suggested-videos .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:none;padding:0}
+        .suggested-videos .header h4{color:#8B5CF6;font-size:16px;margin:0}
+        .suggested-videos .header a{color:#8B5CF6;text-decoration:none;font-size:13px}
+        .suggested-videos .header a:hover{text-decoration:underline}
+        .suggested-videos .grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:8px}
+        .suggested-videos .video-item{cursor:pointer;border-radius:8px;overflow:hidden;background:#2D2D44;transition:transform 0.3s, box-shadow 0.3s}
+        .suggested-videos .video-item:hover{transform:scale(1.02);box-shadow:0 4px 20px rgba(139,92,246,0.3)}
+        .suggested-videos .video-item img{width:100%;border-radius:8px;display:block}
+        .suggested-videos .video-item .title{padding:6px;font-size:13px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+
         .post{background:#1A1A2E;border-radius:12px;border:1px solid #2D2D44;margin-bottom:12px;overflow:hidden}
         .post-header{padding:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .post-header img{width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer}
@@ -66,9 +79,15 @@
         .modal-content .buttons button{padding:8px 20px;border-radius:20px;border:none;font-weight:600;cursor:pointer}
         .modal-content .buttons .cancel{background:#EF4444;color:white}
         .modal-content .buttons .submit{background:#8B5CF6;color:white}
-        
+
         /* ✅ العلامة الزرقاء */
         .verified-badge{color:#1877f2;font-size:14px;margin-right:2px}
+
+        /* ✅ نافذة فيديو مودال */
+        #videoModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+        #videoModal .close-btn{position:absolute;top:20px;right:20px;background:red;color:white;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;cursor:pointer;z-index:10000}
+        #videoModal .video-wrapper{width:100%;max-width:800px;background:black;border-radius:12px;overflow:hidden;position:relative}
+        #videoModal .video-wrapper iframe{width:100%;height:60vh;border:none}
     </style>
 </head>
 <body>
@@ -99,12 +118,32 @@
             <button class="video-btn" onclick="openMediaPicker('video')"><i class="fas fa-video"></i> فيديو</button>
         </div>
     </div>
+
+    <!-- ✅ فيديوهات مقترحة (تم إضافتها هنا) -->
+    {% if suggested_videos %}
+    <div class="suggested-videos">
+        <div class="header">
+            <h4>🎬 فيديوهات مقترحة</h4>
+            <a href="{{ url_for('videos.videos_page') }}">عرض الكل →</a>
+        </div>
+        <div class="grid">
+            {% for video in suggested_videos %}
+            <div class="video-item" onclick="playVideo('{{ video.video_id }}', '{{ video.title }}')">
+                <img src="{{ video.thumbnail }}" alt="{{ video.title }}">
+                <div class="title">{{ video.title }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- ✅ الإعلانات -->
-<div id="adsContainer" style="margin-bottom:16px;"></div>
+    <div id="adsContainer" style="margin-bottom:16px;"></div>
+
     <div id="postsContainer">
         {% if posts %}
             {% for post in posts %}
-            <div class="post">
+            <div class="post" id="post-{{ post.id }}">
                 <div class="post-header">
                     <img src="{{ post.author.avatar }}" alt="" onclick="window.location.href='{{ url_for('profile.view_profile', username=post.author.username) }}'">
                     <div>
@@ -162,6 +201,14 @@
         <a href="{{ url_for('profile.profile') }}"><i class="fas fa-user"></i>الملف</a>
     </div>
 
+    <!-- ✅ نافذة تشغيل الفيديو -->
+    <div id="videoModal">
+        <button class="close-btn" onclick="closeVideo()">✕</button>
+        <div class="video-wrapper">
+            <div id="videoPlayer"></div>
+        </div>
+    </div>
+
     <!-- نافذة اختيار الملفات -->
     <div class="modal" id="mediaModal">
         <div class="modal-content">
@@ -178,221 +225,254 @@
         </div>
     </div>
 
+    <script>
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timeout);
+            t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        let selectedMedia = null;
+        let mediaType = null;
+
+        function openMediaPicker(type) {
+            mediaType = type;
+            const modal = document.getElementById('mediaModal');
+            const input = document.getElementById('mediaFileInput');
+            const title = document.getElementById('mediaModalTitle');
+            if (type === 'image') {
+                title.textContent = '📸 اختيار صورة';
+                input.accept = 'image/*';
+            } else {
+                title.textContent = '🎬 اختيار فيديو';
+                input.accept = 'video/*';
+            }
+            input.value = '';
+            document.getElementById('mediaPreview').style.display = 'none';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('videoPreview').style.display = 'none';
+            modal.classList.add('active');
+        }
+
+        function closeMediaPicker() {
+            document.getElementById('mediaModal').classList.remove('active');
+            selectedMedia = null;
+            mediaType = null;
+        }
+
+        document.getElementById('mediaFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                selectedMedia = event.target.result;
+                const preview = document.getElementById('mediaPreview');
+                const imgPreview = document.getElementById('imagePreview');
+                const videoPreview = document.getElementById('videoPreview');
+                preview.style.display = 'block';
+                if (file.type.startsWith('image/')) {
+                    imgPreview.style.display = 'block';
+                    videoPreview.style.display = 'none';
+                    imgPreview.src = selectedMedia;
+                } else if (file.type.startsWith('video/')) {
+                    videoPreview.style.display = 'block';
+                    imgPreview.style.display = 'none';
+                    videoPreview.src = selectedMedia;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function uploadMedia() {
+            if (!selectedMedia) {
+                showToast('⚠️ الرجاء اختيار ملف');
+                return;
+            }
+            const caption = document.getElementById('postInput').value.trim();
+            const text = caption || (mediaType === 'video' ? ' 🎬 فيديو جديد' : '📸 صورة جديدة');
+            try {
+                const body = { text: text };
+                if (mediaType === 'image') body.image = selectedMedia;
+                else body.video = selectedMedia;
+                const res = await fetch('/posts/api/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ تم النشر!');
+                    closeMediaPicker();
+                    document.getElementById('postInput').value = '';
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ ' + (data.error || 'حدث خطأ'));
+                }
+            } catch(e) {
+                console.error('Error:', e);
+                showToast('❌ حدث خطأ');
+            }
+        }
+
+        async function createPost() {
+            const input = document.getElementById('postInput');
+            const text = input.value.trim();
+            if (!text) {
+                showToast('✏️ اكتب شيئاً');
+                return;
+            }
+            try {
+                const res = await fetch('/posts/api/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    input.value = '';
+                    showToast('✅ تم النشر بنجاح!');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast('❌ ' + (data.error || 'حدث خطأ'));
+                }
+            } catch(e) {
+                console.error('Error:', e);
+                showToast('❌ حدث خطأ في الاتصال');
+            }
+        }
+
+        async function toggleLike(postId) {
+            try {
+                const res = await fetch(`/posts/api/like/${postId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                const data = await res.json();
+                if (data.success) {
+                    const btn = document.querySelector(`#post-${postId} .post-actions button:first-child`);
+                    if (btn) btn.classList.toggle('liked');
+                    document.getElementById(`likeCount-${postId}`).textContent = data.likes_count;
+                }
+            } catch(e) { console.error('Error:', e); }
+        }
+
+        function toggleComments(postId) {
+            const section = document.getElementById(`comments-${postId}`);
+            if (section) {
+                section.style.display = section.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+
+        async function sharePost(postId) {
+            try {
+                await navigator.clipboard.writeText(`https://socialite.com/post/${postId}`);
+                showToast('🔗 تم نسخ الرابط');
+            } catch { showToast('🔗 تم مشاركة المنشور'); }
+        }
+
+        // ✅ تشغيل الفيديو
+        function playVideo(videoId, title) {
+            const modal = document.getElementById('videoModal');
+            const player = document.getElementById('videoPlayer');
+            player.innerHTML = `
+                <iframe 
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
+                    style="width:100%;height:60vh;border:none;" 
+                    allow="autoplay; encrypted-media" 
+                    allowfullscreen>
+                </iframe>
+            `;
+            modal.style.display = 'flex';
+            document.title = `🎬 ${title} - Socialite`;
+        }
+
+        function closeVideo() {
+            const modal = document.getElementById('videoModal');
+            const player = document.getElementById('videoPlayer');
+            player.innerHTML = '';
+            modal.style.display = 'none';
+            document.title = 'Socialite - الرئيسية';
+        }
+
+        // ✅ إغلاق الفيديو بالضغط على ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeVideo();
+        });
+
+        // ✅ إغلاق الفيديو بالضغط على خلفية المودال
+        document.getElementById('videoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeVideo();
+        });
+
+        // ================================================================
+        // ✅ الإعلانات
+        // ================================================================
+        async function loadAds() {
+            try {
+                console.log('🔄 جاري تحميل الإعلانات...');
+                const res = await fetch('/ads/api/active');
+                const ads = await res.json();
+                console.log('📊 عدد الإعلانات:', ads.length);
+
+                const container = document.getElementById('adsContainer');
+                if (!container) {
+                    console.error('❌ adsContainer غير موجود');
+                    return;
+                }
+
+                if (ads.length === 0) {
+                    container.style.display = 'none';
+                    console.log('ℹ️ لا توجد إعلانات نشطة');
+                    return;
+                }
+
+                container.style.display = 'block';
+                container.innerHTML = ads.map(ad => `
+                    <div class="post" style="border:2px solid #8B5CF6;position:relative;margin-bottom:12px;">
+                        <div style="position:absolute;top:8px;left:8px;background:#8B5CF6;color:white;padding:2px 12px;border-radius:12px;font-size:11px;font-weight:600;z-index:5;">
+                            📢 إعلان
+                        </div>
+                        <div class="post-header">
+                            <div>
+                                <div style="font-weight:700;font-size:15px;color:#8B5CF6;">${ad.title}</div>
+                                <div style="font-size:12px;color:#A0A0B0;">${ad.company || 'شركة'}</div>
+                            </div>
+                        </div>
+                        <div class="post-text">${ad.text}</div>
+                        ${ad.image ? `<img src="${ad.image}" class="post-image" alt="" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;margin-top:8px;">` : ''}
+                        ${ad.video ? `<video src="${ad.video}" class="post-video" controls style="width:100%;max-height:300px;border-radius:8px;margin-top:8px;background:#000;"></video>` : ''}
+                        <div style="padding:8px 12px;border-top:1px solid #2D2D44;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <span style="font-size:12px;color:#A0A0B0;">👁️ ${ad.views} مشاهدة</span>
+                            ${ad.link ? `<a href="${ad.link.startsWith('http') ? ad.link : 'https://' + ad.link}" target="_blank" onclick="clickAd(${ad.id})" style="padding:6px 20px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;text-decoration:none;cursor:pointer;">زيارة الموقع</a>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+                console.log('✅ تم عرض الإعلانات');
+
+            } catch(e) {
+                console.error('❌ خطأ في تحميل الإعلانات:', e);
+            }
+        }
+
+        async function clickAd(adId) {
+            try {
+                await fetch(`/ads/api/click/${adId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } catch(e) {
+                console.error('Error clicking ad:', e);
+            }
+        }
+
+        // ================================================================
+        // ✅ بدء التشغيل
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 تحميل الصفحة الرئيسية...');
+            loadAds();
+            setInterval(loadAds, 30000);
+        });
     </script>
 </body>
 </html>
-<script>
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.classList.add('show');
-        clearTimeout(t._timeout);
-        t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
-    }
-
-    let selectedMedia = null;
-    let mediaType = null;
-
-    function openMediaPicker(type) {
-        mediaType = type;
-        const modal = document.getElementById('mediaModal');
-        const input = document.getElementById('mediaFileInput');
-        const title = document.getElementById('mediaModalTitle');
-        if (type === 'image') {
-            title.textContent = '📸 اختيار صورة';
-            input.accept = 'image/*';
-        } else {
-            title.textContent = '🎬 اختيار فيديو';
-            input.accept = 'video/*';
-        }
-        input.value = '';
-        document.getElementById('mediaPreview').style.display = 'none';
-        document.getElementById('imagePreview').style.display = 'none';
-        document.getElementById('videoPreview').style.display = 'none';
-        modal.classList.add('active');
-    }
-
-    function closeMediaPicker() {
-        document.getElementById('mediaModal').classList.remove('active');
-        selectedMedia = null;
-        mediaType = null;
-    }
-
-    document.getElementById('mediaFileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            selectedMedia = event.target.result;
-            const preview = document.getElementById('mediaPreview');
-            const imgPreview = document.getElementById('imagePreview');
-            const videoPreview = document.getElementById('videoPreview');
-            preview.style.display = 'block';
-            if (file.type.startsWith('image/')) {
-                imgPreview.style.display = 'block';
-                videoPreview.style.display = 'none';
-                imgPreview.src = selectedMedia;
-            } else if (file.type.startsWith('video/')) {
-                videoPreview.style.display = 'block';
-                imgPreview.style.display = 'none';
-                videoPreview.src = selectedMedia;
-            }
-        };
-        reader.readAsDataURL(file);
-    });
-
-    async function uploadMedia() {
-        if (!selectedMedia) {
-            showToast('⚠️ الرجاء اختيار ملف');
-            return;
-        }
-        const caption = document.getElementById('postInput').value.trim();
-        const text = caption || (mediaType === 'video' ? '🎬 فيديو جديد' : '📸 صورة جديدة');
-        try {
-            const body = { text: text };
-            if (mediaType === 'image') body.image = selectedMedia;
-            else body.video = selectedMedia;
-            const res = await fetch('/posts/api/posts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            const data = await res.json();
-            if (res.ok) {
-                showToast('✅ تم النشر!');
-                closeMediaPicker();
-                document.getElementById('postInput').value = '';
-                setTimeout(() => location.reload(), 800);
-            } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
-            }
-        } catch(e) {
-            console.error('Error:', e);
-            showToast('❌ حدث خطأ');
-        }
-    }
-
-    async function createPost() {
-        const input = document.getElementById('postInput');
-        const text = input.value.trim();
-        if (!text) {
-            showToast('✏️ اكتب شيئاً');
-            return;
-        }
-        try {
-            const res = await fetch('/posts/api/posts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                input.value = '';
-                showToast('✅ تم النشر بنجاح!');
-                setTimeout(() => location.reload(), 800);
-            } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
-            }
-        } catch(e) {
-            console.error('Error:', e);
-            showToast('❌ حدث خطأ في الاتصال');
-        }
-    }
-
-    async function toggleLike(postId) {
-        try {
-            const res = await fetch(`/posts/api/like/${postId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-            const data = await res.json();
-            if (data.success) {
-                const btn = document.querySelector(`#post-${postId} .post-actions button:first-child`);
-                if (btn) btn.classList.toggle('liked');
-                document.getElementById(`likeCount-${postId}`).textContent = data.likes_count;
-            }
-        } catch(e) { console.error('Error:', e); }
-    }
-
-    function toggleComments(postId) {
-        const section = document.getElementById(`comments-${postId}`);
-        if (section) {
-            section.style.display = section.style.display === 'block' ? 'none' : 'block';
-        }
-    }
-
-    async function sharePost(postId) {
-        try {
-            await navigator.clipboard.writeText(`https://socialite.com/post/${postId}`);
-            showToast('🔗 تم نسخ الرابط');
-        } catch { showToast('🔗 تم مشاركة المنشور'); }
-    }
-
-    // ================================================================
-    // ✅ الإعلانات
-    // ================================================================
-    async function loadAds() {
-        try {
-            console.log('🔄 جاري تحميل الإعلانات...');
-            const res = await fetch('/ads/api/active');
-            const ads = await res.json();
-            console.log('📊 عدد الإعلانات:', ads.length);
-            
-            const container = document.getElementById('adsContainer');
-            if (!container) {
-                console.error('❌ adsContainer غير موجود');
-                return;
-            }
-            
-            if (ads.length === 0) {
-                container.style.display = 'none';
-                console.log('ℹ️ لا توجد إعلانات نشطة');
-                return;
-            }
-            
-            container.style.display = 'block';
-            container.innerHTML = ads.map(ad => `
-                <div class="post" style="border:2px solid #8B5CF6;position:relative;margin-bottom:12px;">
-                    <div style="position:absolute;top:8px;left:8px;background:#8B5CF6;color:white;padding:2px 12px;border-radius:12px;font-size:11px;font-weight:600;z-index:5;">
-                        📢 إعلان
-                    </div>
-                    <div class="post-header">
-                        <div>
-                            <div style="font-weight:700;font-size:15px;color:#8B5CF6;">${ad.title}</div>
-                            <div style="font-size:12px;color:#A0A0B0;">${ad.company || 'شركة'}</div>
-                        </div>
-                    </div>
-                    <div class="post-text">${ad.text}</div>
-                    ${ad.image ? `<img src="${ad.image}" class="post-image" alt="" style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;margin-top:8px;">` : ''}
-                    ${ad.video ? `<video src="${ad.video}" class="post-video" controls style="width:100%;max-height:300px;border-radius:8px;margin-top:8px;background:#000;"></video>` : ''}
-                    <div style="padding:8px 12px;border-top:1px solid #2D2D44;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                        <span style="font-size:12px;color:#A0A0B0;">👁️ ${ad.views} مشاهدة</span>
-                        ${ad.link ? `<a href="${ad.link.startsWith('http') ? ad.link : 'https://' + ad.link}" target="_blank" onclick="clickAd(${ad.id})" style="padding:6px 20px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;text-decoration:none;cursor:pointer;">زيارة الموقع</a>` : ''}
-                    </div>
-                </div>
-            `).join('');
-            
-            console.log('✅ تم عرض الإعلانات');
-            
-        } catch(e) {
-            console.error('❌ خطأ في تحميل الإعلانات:', e);
-        }
-    }
-
-    async function clickAd(adId) {
-        try {
-            await fetch(`/ads/api/click/${adId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-        } catch(e) {
-            console.error('Error clicking ad:', e);
-        }
-    }
-
-    // ================================================================
-    // ✅ بدء التشغيل
-    // ================================================================
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 تحميل الصفحة الرئيسية...');
-        loadAds();
-        setInterval(loadAds, 30000);
-    });
-</script>

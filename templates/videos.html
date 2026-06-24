@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
 {% block title %}فيديوهات{% endblock %}
-
 {% block content %}
 <div style="padding:12px;">
     <h2>🎬 فيديوهات</h2>
@@ -15,9 +13,12 @@
 
 <!-- ✅ نافذة تشغيل الفيديو داخل التطبيق -->
 <div id="videoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px;">
-    <button onclick="closeVideo()" style="position:absolute;top:20px;right:20px;background:red;color:white;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;cursor:pointer;">✕</button>
-    <div id="videoPlayerContainer" style="width:100%;max-width:800px;background:black;border-radius:12px;overflow:hidden;">
-        <video id="videoPlayer" controls style="width:100%;max-height:70vh;background:black;" autoplay></video>
+    <button onclick="closeVideo()" style="position:absolute;top:20px;right:20px;background:red;color:white;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;cursor:pointer;z-index:10000;">✕</button>
+    <div id="videoPlayerContainer" style="width:100%;max-width:800px;background:black;border-radius:12px;overflow:hidden;position:relative;">
+        <!-- ✅ استخدام div بدلاً من video -->
+        <div id="videoPlayer" style="width:100%;height:60vh;background:black;display:flex;align-items:center;justify-content:center;position:relative;">
+            <!-- سيتم وضع iframe هنا -->
+        </div>
     </div>
 </div>
 
@@ -31,10 +32,10 @@
                 const container = document.getElementById('videosContainer');
                 container.innerHTML = data.videos.map(v => `
                     <div style="background:#1A1A2E;border-radius:12px;border:1px solid #2D2D44;margin-bottom:12px;overflow:hidden;cursor:pointer;" onclick="playVideo('${v.video_id}', '${v.title}')">
-                        <img src="${v.thumbnail}" style="width:100%;border-radius:8px;">
+                        <img src="${v.thumbnail}" style="width:100%;border-radius:8px;" alt="${v.title}">
                         <div style="padding:12px;">
                             <div style="font-weight:600;">${v.title}</div>
-                            <div style="font-size:13px;color:#A0A0B0;">${v.description}</div>
+                            <div style="font-size:13px;color:#A0A0B0;">${v.description || ''}</div>
                         </div>
                     </div>
                 `).join('');
@@ -47,6 +48,7 @@
                 `;
             }
         } catch(e) {
+            console.error('Error loading videos:', e);
             document.getElementById('videosContainer').innerHTML = `
                 <div style="text-align:center;padding:40px;color:#EF4444;">
                     <i class="fas fa-exclamation-triangle" style="font-size:48px;"></i>
@@ -56,13 +58,21 @@
         }
     }
 
-    // ✅ تشغيل الفيديو داخل التطبيق (بدون يوتيوب)
+    // ✅ تشغيل الفيديو داخل التطبيق (باستخدام div بدلاً من video)
     function playVideo(videoId, title) {
         const modal = document.getElementById('videoModal');
         const player = document.getElementById('videoPlayer');
         
-        // ✅ استخدام رابط مباشر من YouTube (مدمج في التطبيق)
-        player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+        // ✅ وضع iframe داخل div بدلاً من video
+        player.innerHTML = `
+            <iframe 
+                src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
+                style="width:100%;height:100%;border:none;position:absolute;top:0;left:0;" 
+                allow="autoplay; encrypted-media" 
+                allowfullscreen>
+            </iframe>
+        `;
+        
         modal.style.display = 'flex';
         document.title = `🎬 ${title} - Socialite`;
     }
@@ -70,14 +80,23 @@
     function closeVideo() {
         const modal = document.getElementById('videoModal');
         const player = document.getElementById('videoPlayer');
-        player.src = '';
+        player.innerHTML = '';  // ✅ تفريغ الـ iframe
         modal.style.display = 'none';
         document.title = '🎬 فيديوهات - Socialite';
     }
 
-    // ✅ إغلاق الفيديو بالضغط على Escape
+    // ✅ إغلاق الفيديو بالضغط على ESC
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeVideo();
+        if (e.key === 'Escape') {
+            closeVideo();
+        }
+    });
+
+    // ✅ إغلاق الفيديو بالضغط على خلفية المودال
+    document.getElementById('videoModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeVideo();
+        }
     });
 
     document.addEventListener('DOMContentLoaded', loadVideos);

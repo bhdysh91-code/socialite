@@ -5,12 +5,19 @@ from datetime import datetime
 import time
 
 pages_bp = Blueprint('pages', __name__)
-
 @pages_bp.route('/')
 @login_required
 def index():
     posts = Post.query.order_by(Post.created_at.desc()).all()
-    return render_template('index.html', user=current_user, posts=posts)
+    
+    # ✅ فيديوهات مقترحة (من يوتيوب)
+    suggested_videos = [
+        {'title': 'فيديو مقترح 1', 'video_id': 'dQw4w9WgXcQ', 'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg'},
+        {'title': 'فيديو مقترح 2', 'video_id': '9bZkp7q19f0', 'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg'},
+        {'title': 'فيديو مقترح 3', 'video_id': 'kJQP7kiw5Fk', 'thumbnail': 'https://img.youtube.com/vi/kJQP7kiw5Fk/hqdefault.jpg'},
+    ]
+    
+    return render_template('index.html', user=current_user, posts=posts, suggested_videos=suggested_videos)
 
 @pages_bp.route('/search')
 @login_required
@@ -116,7 +123,6 @@ def news_feed():
 # ================================================================
 # ✅ بحث متقدم (يشمل فيديوهات وأخبار)
 # ================================================================
-
 @pages_bp.route('/search-advanced')
 @login_required
 def search_advanced():
@@ -137,11 +143,27 @@ def search_advanced():
             (Article.title.contains(query)) | (Article.description.contains(query))
         ).order_by(Article.published_at.desc()).limit(10).all()
         
-        # ✅ بحث في الفيديوهات (محاكاة)
-        # في الواقع، سنستخدم API يوتيوب للبحث الحقيقي
-        videos = [
-            {'title': f'فيديو عن {query} - 1', 'description': 'هذا فيديو تجريبي', 'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', 'video_id': 'dQw4w9WgXcQ'},
-            {'title': f'فيديو عن {query} - 2', 'description': 'فيديو آخر', 'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg', 'video_id': '9bZkp7q19f0'}
-        ]
+        # ✅ بحث في يوتيوب (جلب فيديوهات من يوتيوب)
+        try:
+            import requests
+            YOUTUBE_API_KEY = 'YOUR_YOUTUBE_API_KEY'  # ⚠️ سجل للحصول على مفتاح
+            url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video&maxResults=10&key={YOUTUBE_API_KEY}'
+            response = requests.get(url)
+            data = response.json()
+            
+            for item in data.get('items', []):
+                videos.append({
+                    'title': item['snippet']['title'],
+                    'description': item['snippet']['description'],
+                    'thumbnail': item['snippet']['thumbnails']['medium']['url'],
+                    'video_id': item['id']['videoId']
+                })
+        except Exception as e:
+            print(f"خطأ في جلب فيديوهات يوتيوب: {e}")
+            # ✅ فيديوهات تجريبية في حال فشل الاتصال
+            videos = [
+                {'title': f'فيديو عن {query} - 1', 'description': 'هذا فيديو تجريبي', 'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', 'video_id': 'dQw4w9WgXcQ'},
+                {'title': f'فيديو عن {query} - 2', 'description': 'فيديو آخر', 'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg', 'video_id': '9bZkp7q19f0'}
+            ]
     
     return render_template('search_advanced.html', user=current_user, query=query, users=users, articles=articles, videos=videos)
