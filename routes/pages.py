@@ -3,8 +3,11 @@ from flask_login import login_required, current_user
 from models import db, Post, User, Article
 from datetime import datetime
 import time
+import requests  # ✅ تأكد من وجود هذا السطر
+
 
 pages_bp = Blueprint('pages', __name__)
+
 @pages_bp.route('/')
 @login_required
 def index():
@@ -129,41 +132,34 @@ def search_advanced():
     query = request.args.get('q', '').strip()
     users = []
     articles = []
+    web_results = []
     videos = []
+    news = []
     
     if query:
-        # ✅ بحث في المستخدمين
+        # ✅ بحث داخلي (مستخدمين وأخبار)
         users = User.query.filter(
             (User.username.contains(query)) | (User.full_name.contains(query)),
             User.id != current_user.id
         ).limit(10).all()
         
-        # ✅ بحث في الأخبار
         articles = Article.query.filter(
             (Article.title.contains(query)) | (Article.description.contains(query))
         ).order_by(Article.published_at.desc()).limit(10).all()
         
-        # ✅ بحث في يوتيوب (جلب فيديوهات من يوتيوب)
+        # ✅ بحث في Brave (بدون مفتاح - تجريبي)
         try:
-            import requests
-            YOUTUBE_API_KEY = 'YOUR_YOUTUBE_API_KEY'  # ⚠️ سجل للحصول على مفتاح
-            url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video&maxResults=10&key={YOUTUBE_API_KEY}'
+            url = f'https://api.search.brave.com/res/v1/web/search?q={query}&count=10'
             response = requests.get(url)
             data = response.json()
             
-            for item in data.get('items', []):
-                videos.append({
-                    'title': item['snippet']['title'],
-                    'description': item['snippet']['description'],
-                    'thumbnail': item['snippet']['thumbnails']['medium']['url'],
-                    'video_id': item['id']['videoId']
+            for item in data.get('web', {}).get('results', []):
+                web_results.append({
+                    'title': item.get('title', ''),
+                    'description': item.get('description', ''),
+                    'url': item.get('url', '')
                 })
-        except Exception as e:
-            print(f"خطأ في جلب فيديوهات يوتيوب: {e}")
-            # ✅ فيديوهات تجريبية في حال فشل الاتصال
-            videos = [
-                {'title': f'فيديو عن {query} - 1', 'description': 'هذا فيديو تجريبي', 'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', 'video_id': 'dQw4w9WgXcQ'},
-                {'title': f'فيديو عن {query} - 2', 'description': 'فيديو آخر', 'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg', 'video_id': '9bZkp7q19f0'}
-            ]
+        except:
+            pass
     
-    return render_template('search_advanced.html', user=current_user, query=query, users=users, articles=articles, videos=videos)
+    return render_template('search_advanced.html', user=current_user, query=query, users=users, articles=articles, web_results=web_results, videos=videos, news=news)
