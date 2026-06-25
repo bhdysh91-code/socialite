@@ -1,104 +1,198 @@
 {% extends "base.html" %}
-{% block title %}فيديوهات{% endblock %}
+
+{% block title %}شورت فيديوهات{% endblock %}
+
 {% block content %}
-<div style="padding:12px;">
-    <h2>🎬 فيديوهات</h2>
-    <div id="videosContainer">
-        <div style="text-align:center;padding:40px;color:#A0A0B0;">
-            <i class="fas fa-spinner fa-spin" style="font-size:32px;"></i>
-            <p>جاري تحميل الفيديوهات...</p>
+<div style="height:calc(100vh - 60px);overflow:hidden;margin:-12px;padding:0;background:#000;position:relative;">
+    
+    <!-- ✅ حاوية الفيديوهات -->
+    <div id="shortsContainer" style="height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth;">
+        <div id="shortsList" style="height:100%;">
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#A0A0B0;font-size:18px;">
+                <div style="text-align:center;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:48px;color:#8B5CF6;"></i>
+                    <p style="margin-top:12px;">جاري تحميل الفيديوهات...</p>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- ✅ نافذة تشغيل الفيديو داخل التطبيق -->
-<div id="videoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px;">
-    <button onclick="closeVideo()" style="position:absolute;top:20px;right:20px;background:red;color:white;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;cursor:pointer;z-index:10000;">✕</button>
-    <div id="videoPlayerContainer" style="width:100%;max-width:800px;background:black;border-radius:12px;overflow:hidden;position:relative;">
-        <!-- ✅ استخدام div بدلاً من video -->
-        <div id="videoPlayer" style="width:100%;height:60vh;background:black;display:flex;align-items:center;justify-content:center;position:relative;">
-            <!-- سيتم وضع iframe هنا -->
-        </div>
+    <!-- ✅ أزرار التفاعل (يمين الشاشة) -->
+    <div id="interactionButtons" style="position:absolute;bottom:120px;right:16px;display:flex;flex-direction:column;gap:20px;z-index:10;">
+        <button onclick="likeVideo()" style="background:none;border:none;color:white;font-size:28px;cursor:pointer;text-align:center;">
+            <i class="fas fa-heart" style="color:#fff;text-shadow:0 0 10px rgba(0,0,0,0.8);"></i>
+            <span id="likeCount" style="display:block;font-size:12px;color:white;text-shadow:0 0 10px rgba(0,0,0,0.8);">0</span>
+        </button>
+        <button onclick="shareVideo()" style="background:none;border:none;color:white;font-size:28px;cursor:pointer;text-align:center;">
+            <i class="fas fa-share" style="text-shadow:0 0 10px rgba(0,0,0,0.8);"></i>
+            <span style="display:block;font-size:12px;color:white;text-shadow:0 0 10px rgba(0,0,0,0.8);">مشاركة</span>
+        </button>
+        <button onclick="window.location.href='{{ url_for('profile.profile') }}'" style="background:none;border:none;color:white;font-size:28px;cursor:pointer;text-align:center;">
+            <i class="fas fa-user" style="text-shadow:0 0 10px rgba(0,0,0,0.8);"></i>
+            <span style="display:block;font-size:12px;color:white;text-shadow:0 0 10px rgba(0,0,0,0.8);">الملف</span>
+        </button>
     </div>
 </div>
 
 <script>
-    async function loadVideos() {
-        try {
-            const res = await fetch('/videos/api/videos');
-            const data = await res.json();
+    let shortsData = [];
+    let currentIndex = 0;
+    let isLiked = false;
+    let likeCount = 0;
 
-            if (data.success && data.videos.length > 0) {
-                const container = document.getElementById('videosContainer');
-                container.innerHTML = data.videos.map(v => `
-                    <div style="background:#1A1A2E;border-radius:12px;border:1px solid #2D2D44;margin-bottom:12px;overflow:hidden;cursor:pointer;" onclick="playVideo('${v.video_id}', '${v.title}')">
-                        <img src="${v.thumbnail}" style="width:100%;border-radius:8px;" alt="${v.title}">
-                        <div style="padding:12px;">
-                            <div style="font-weight:600;">${v.title}</div>
-                            <div style="font-size:13px;color:#A0A0B0;">${v.description || ''}</div>
-                        </div>
-                    </div>
-                `).join('');
+    // ✅ جلب الشورت فيديوهات
+    async function loadShorts() {
+        try {
+            const res = await fetch('/videos/api/shorts');
+            const data = await res.json();
+            
+            if (data.success && data.shorts.length > 0) {
+                shortsData = data.shorts;
+                renderShorts();
             } else {
-                document.getElementById('videosContainer').innerHTML = `
-                    <div style="text-align:center;padding:40px;color:#A0A0B0;">
-                        <i class="fas fa-video-slash" style="font-size:48px;"></i>
-                        <p>لا توجد فيديوهات حالياً</p>
+                document.getElementById('shortsList').innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#A0A0B0;text-align:center;padding:20px;">
+                        <div>
+                            <i class="fas fa-video-slash" style="font-size:48px;"></i>
+                            <p style="margin-top:12px;">لا توجد فيديوهات حالياً</p>
+                            <button onclick="loadShorts()" style="margin-top:12px;padding:8px 20px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">
+                                🔄 إعادة المحاولة
+                            </button>
+                        </div>
                     </div>
                 `;
             }
         } catch(e) {
-            console.error('Error loading videos:', e);
-            document.getElementById('videosContainer').innerHTML = `
-                <div style="text-align:center;padding:40px;color:#EF4444;">
-                    <i class="fas fa-exclamation-triangle" style="font-size:48px;"></i>
-                    <p>حدث خطأ في تحميل الفيديوهات</p>
+            console.error('خطأ في جلب الفيديوهات:', e);
+            document.getElementById('shortsList').innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#EF4444;text-align:center;padding:20px;">
+                    <div>
+                        <i class="fas fa-exclamation-triangle" style="font-size:48px;"></i>
+                        <p style="margin-top:12px;">حدث خطأ في تحميل الفيديوهات</p>
+                        <button onclick="loadShorts()" style="margin-top:12px;padding:8px 20px;border-radius:20px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;">
+                            🔄 إعادة المحاولة
+                        </button>
+                    </div>
                 </div>
             `;
         }
     }
 
-    // ✅ تشغيل الفيديو داخل التطبيق (باستخدام div بدلاً من video)
-    function playVideo(videoId, title) {
-        const modal = document.getElementById('videoModal');
-        const player = document.getElementById('videoPlayer');
+    // ✅ عرض الفيديوهات (تمرير لا نهائي)
+    function renderShorts() {
+        const container = document.getElementById('shortsList');
+        container.innerHTML = '';
         
-        // ✅ وضع iframe داخل div بدلاً من video
-        player.innerHTML = `
-            <iframe 
-                src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
-                style="width:100%;height:100%;border:none;position:absolute;top:0;left:0;" 
-                allow="autoplay; encrypted-media" 
-                allowfullscreen>
-            </iframe>
-        `;
+        shortsData.forEach((video, index) => {
+            const div = document.createElement('div');
+            div.style.cssText = `
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                scroll-snap-align: start;
+                position: relative;
+                background: #000;
+            `;
+            div.innerHTML = `
+                <iframe src="https://www.youtube.com/embed/${video.video_id}?autoplay=1&rel=0&controls=0&loop=1&playlist=${video.video_id}" 
+                        style="width:100%;height:100%;border:none;pointer-events:none;" 
+                        allow="autoplay; encrypted-media" 
+                        allowfullscreen>
+                </iframe>
+                <div style="position:absolute;bottom:60px;left:16px;color:white;text-shadow:0 0 20px rgba(0,0,0,0.9);">
+                    <div style="font-size:16px;font-weight:600;">${video.title}</div>
+                    <div style="font-size:13px;color:#A0A0B0;">${video.channel}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
         
-        modal.style.display = 'flex';
-        document.title = `🎬 ${title} - Socialite`;
+        // ✅ تحديث أرقام الإعجابات
+        updateLikeDisplay();
     }
 
-    function closeVideo() {
-        const modal = document.getElementById('videoModal');
-        const player = document.getElementById('videoPlayer');
-        player.innerHTML = '';  // ✅ تفريغ الـ iframe
-        modal.style.display = 'none';
-        document.title = '🎬 فيديوهات - Socialite';
+    // ✅ تحديث عرض الإعجابات
+    function updateLikeDisplay() {
+        const likeSpan = document.getElementById('likeCount');
+        if (likeSpan) {
+            likeSpan.textContent = likeCount;
+        }
     }
 
-    // ✅ إغلاق الفيديو بالضغط على ESC
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeVideo();
+    // ✅ إعجاب بالفيديو
+    function likeVideo() {
+        isLiked = !isLiked;
+        const heart = document.querySelector('#interactionButtons .fa-heart');
+        if (isLiked) {
+            heart.style.color = '#EF4444';
+            likeCount += 1;
+        } else {
+            heart.style.color = 'white';
+            likeCount -= 1;
+        }
+        updateLikeDisplay();
+        showToast(isLiked ? '❤️ تم الإعجاب' : '💔 تم إلغاء الإعجاب');
+    }
+
+    // ✅ مشاركة الفيديو
+    function shareVideo() {
+        if (shortsData[currentIndex]) {
+            const url = `https://www.youtube.com/shorts/${shortsData[currentIndex].video_id}`;
+            if (navigator.share) {
+                navigator.share({
+                    title: shortsData[currentIndex].title,
+                    text: '🎬 شاهد هذا الفيديو على Socialite',
+                    url: url
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('✅ تم نسخ الرابط');
+                }).catch(() => {
+                    showToast('🔗 شارك الفيديو: ' + url);
+                });
+            }
+        }
+    }
+
+    // ✅ عرض رسالة منبثقة
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+    }
+
+    // ✅ التحكم بالتمرير (تحديث الفيديو الحالي)
+    document.getElementById('shortsContainer').addEventListener('scroll', function() {
+        const container = this;
+        const children = container.querySelectorAll('#shortsList > div');
+        let closestIndex = 0;
+        let closestDistance = Infinity;
+        
+        children.forEach((child, index) => {
+            const rect = child.getBoundingClientRect();
+            const distance = Math.abs(rect.top);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = index;
+            }
+        });
+        
+        if (closestIndex !== currentIndex) {
+            currentIndex = closestIndex;
+            // ✅ تحديث الإعجابات للفيديو الجديد
+            likeCount = 0;
+            isLiked = false;
+            const heart = document.querySelector('#interactionButtons .fa-heart');
+            if (heart) heart.style.color = 'white';
+            updateLikeDisplay();
         }
     });
 
-    // ✅ إغلاق الفيديو بالضغط على خلفية المودال
-    document.getElementById('videoModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeVideo();
-        }
-    });
-
-    document.addEventListener('DOMContentLoaded', loadVideos);
+    // ✅ تحميل الفيديوهات عند تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', loadShorts);
 </script>
 {% endblock %}

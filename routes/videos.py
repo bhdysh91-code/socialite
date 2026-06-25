@@ -1,30 +1,35 @@
 from flask import Blueprint, render_template, jsonify
 from flask_login import login_required, current_user
+from config import YOUTUBE_API_KEY
+import requests
 
 videos_bp = Blueprint('videos', __name__)
 
 @videos_bp.route('/')
 @login_required
 def videos_page():
-    """صفحة عرض الفيديوهات"""
+    """صفحة عرض الشورت فيديوهات"""
     return render_template('videos.html', user=current_user)
 
-@videos_bp.route('/api/videos')
+@videos_bp.route('/api/shorts')
 @login_required
-def get_videos():
-    """جلب فيديوهات تجريبية (مع video_id)"""
-    videos = [
-        {
-            'title': 'فيديو تجريبي 1',
-            'description': 'هذا فيديو تجريبي للاختبار',
-            'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
-            'video_id': 'dQw4w9WgXcQ'  # ✅ إضافة video_id
-        },
-        {
-            'title': 'فيديو تجريبي 2',
-            'description': 'فيديو آخر للاختبار',
-            'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg',
-            'video_id': '9bZkp7q19f0'  # ✅ إضافة video_id
-        }
-    ]
-    return jsonify({'success': True, 'videos': videos})
+def get_shorts():
+    """جلب شورت فيديوهات من يوتيوب"""
+    try:
+        # ✅ البحث عن فيديوهات قصيرة (Shorts)
+        url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q=shorts&type=video&videoDuration=short&maxResults=50&key={YOUTUBE_API_KEY}'
+        response = requests.get(url)
+        data = response.json()
+        
+        shorts = []
+        for item in data.get('items', []):
+            shorts.append({
+                'title': item['snippet']['title'],
+                'video_id': item['id']['videoId'],
+                'thumbnail': item['snippet']['thumbnails']['high']['url'],
+                'channel': item['snippet']['channelTitle']
+            })
+        
+        return jsonify({'success': True, 'shorts': shorts})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
