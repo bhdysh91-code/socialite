@@ -21,6 +21,11 @@ def index():
     ]
     
     return render_template('index.html', user=current_user, posts=posts, suggested_videos=suggested_videos)
+@pages_bp.route('/api/fetch-news-test', methods=['GET'])
+@login_required
+def fetch_news_test():
+    """نسخة GET للاختبار"""
+    return fetch_news_api()
 
 @pages_bp.route('/search')
 @login_required
@@ -163,3 +168,20 @@ def search_advanced():
             pass
     
     return render_template('search_advanced.html', user=current_user, query=query, users=users, articles=articles, web_results=web_results, videos=videos, news=news)
+# ================================================================
+# ✅ API لجلب تفاصيل الخبر
+# ================================================================
+
+@pages_bp.route('/api/article/<int:article_id>')
+@login_required
+def get_article(article_id):
+    article = Article.query.get_or_404(article_id)
+    return jsonify({
+        'title': article.title,
+        'content': f"""
+            <p><strong>{article.title}</strong></p>
+            <p>{article.description}</p>
+            <p><a href="{article.link}" target="_blank" style="color:#8B5CF6;">🔗 المصدر</a></p>
+            <p style="font-size:12px;color:#65676b;">{article.published_at.strftime('%Y-%m-%d %H:%M') if article.published_at else ''}</p>
+        """
+    })

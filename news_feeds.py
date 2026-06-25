@@ -5,39 +5,30 @@ from models import db, Article
 import schedule
 import time
 
-# ✅ قائمة مصادر RSS (عربية + عالمية)
+# ✅ قائمة مصادر RSS
 RSS_SOURCES = [
-    # العربية
     'https://www.aljazeera.net/feed/rss',
     'https://www.alarabiya.net/feed/rss',
     'https://www.albayan.ae/feed/rss',
     'https://www.emaratalyoum.com/feed/rss',
-    'https://www.kooora.com/rss.aspx',
-    'https://www.yallakora.com/rss',
     'https://www.skynewsarabia.com/feed/rss',
     'https://arabic.cnn.com/rss/latest',
-    'https://www.egypttoday.com/feed',
     'https://www.youm7.com/RSS/News',
-    # الرياضة
-    'https://www.espn.com/espn/rss/news',
-    'https://sports.yahoo.com/rss/',
-    'https://www.bbc.com/sport/0/rss.xml',
-    # العالمية
-    'https://feeds.bbci.co.uk/news/rss.xml',
-    'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
-    'https://www.washingtonpost.com/rss/world',
-    'https://www.theguardian.com/world/rss',
-    'https://www.reuters.com/rss',
-    'https://edition.cnn.com/rss',
+    'https://www.egypttoday.com/feed',
+    'https://www.kooora.com/rss.aspx',
+    'https://www.yallakora.com/rss',
 ]
 
 def fetch_rss_news():
-    """جلب الأخبار من جميع مصادر RSS"""
+    """جلب الأخبار من جميع مصادر RSS (مع مهلة زمنية)"""
     count = 0
     for source in RSS_SOURCES:
         try:
-            feed = feedparser.parse(source)
-            for entry in feed.entries[:5]:  # 5 مقالات من كل مصدر
+            # ✅ استخدم requests للحصول على المحتوى مع مهلة زمنية
+            response = requests.get(source, timeout=10)
+            feed = feedparser.parse(response.content)
+            
+            for entry in feed.entries[:5]:
                 existing = Article.query.filter_by(link=entry.link).first()
                 if not existing:
                     article = Article(
@@ -50,8 +41,11 @@ def fetch_rss_news():
                     )
                     db.session.add(article)
                     count += 1
+        except requests.exceptions.Timeout:
+            print(f"⏰ مهلة زمنية لتجاوز المصدر: {source}")
         except Exception as e:
-            print(f"خطأ في {source}: {e}")
+            print(f"❌ خطأ في {source}: {e}")
+    
     db.session.commit()
     print(f"✅ تم جلب {count} خبر جديد")
 
