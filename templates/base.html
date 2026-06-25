@@ -106,6 +106,7 @@
     {% if user.is_authenticated and user.is_admin %}
     <div class="admin-bar">
         <span class="admin-icon">👑</span>
+        <a href="{{ url_for('reports.reports_dashboard') }}">📢 الإبلاغات</a>
         <a href="{{ url_for('admin.dashboard') }}">📊 لوحة التحكم</a>
         <a href="{{ url_for('admin.users') }}">👥 المستخدمين</a>
         <a href="{{ url_for('admin.posts') }}">📝 المنشورات</a>

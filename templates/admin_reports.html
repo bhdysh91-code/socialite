@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}الإبلاغات{% endblock %}
+
+{% block content %}
+<div style="padding:12px;">
+    <div style="background:#1A1A2E;border-radius:12px;padding:16px;border:1px solid #2D2D44;">
+        <h2>📢 الإبلاغات ({{ reports|length }})</h2>
+        {% if reports %}
+            {% for r in reports %}
+            <div style="padding:10px 0;border-bottom:1px solid #2D2D44;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <span style="font-weight:600;">{{ r.reporter.full_name }}</span>
+                    <span>→</span>
+                    <span>{% if r.reported %}{{ r.reported.full_name }}{% else %}منشور{% endif %}</span>
+                    <span style="color:#A0A0B0;font-size:12px;">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <span style="background:{% if r.status == 'pending' %}#F59E0B{% else %}#10B981{% endif %};padding:2px 8px;border-radius:12px;font-size:12px;">
+                        {{ r.status }}
+                    </span>
+                </div>
+                <div style="color:#A0A0B0;font-size:14px;">{{ r.reason }}</div>
+                {% if r.status == 'pending' %}
+                <button onclick="resolveReport({{ r.id }})" style="margin-top:4px;padding:4px 12px;border-radius:12px;border:none;background:#8B5CF6;color:white;cursor:pointer;">✔️ حل الإبلاغ</button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align:center;padding:40px;color:#A0A0B0;">
+                <i class="fas fa-check-circle" style="font-size:48px;color:#10B981;"></i>
+                <p style="margin-top:12px;">لا توجد إبلاغات</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    async function resolveReport(reportId) {
+        try {
+            const res = await fetch(`/reports/resolve/${reportId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ تم حل الإبلاغ');
+                location.reload();
+            }
+        } catch(e) {
+            showToast('❌ حدث خطأ');
+        }
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (t) {
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    }
+</script>
+{% endblock %}

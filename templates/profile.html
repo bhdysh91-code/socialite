@@ -47,15 +47,23 @@
 
             <!-- ✅ أزرار المكالمات -->
             {% if user.id != profile_user.id %}
-            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-                <a href="{{ url_for('calls.call_audio', user_id=profile_user.id) }}" style="padding:10px 20px;border-radius:10px;border:none;background:#10B981;color:white;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-phone"></i> مكالمة صوتية
-                </a>
-                <a href="{{ url_for('calls.call_video', user_id=profile_user.id) }}" style="padding:10px 20px;border-radius:10px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-video"></i> مكالمة فيديو
-                </a>
-            </div>
-            {% endif %}
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+    <a href="{{ url_for('calls.call_audio', user_id=profile_user.id) }}" style="padding:10px 20px;border-radius:10px;border:none;background:#10B981;color:white;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+        <i class="fas fa-phone"></i> مكالمة صوتية
+    </a>
+    <a href="{{ url_for('calls.call_video', user_id=profile_user.id) }}" style="padding:10px 20px;border-radius:10px;border:none;background:#8B5CF6;color:white;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+        <i class="fas fa-video"></i> مكالمة فيديو
+    </a>
+    <!-- ✅ زر الإبلاغ عن المستخدم -->
+    <button onclick="reportUser({{ profile_user.id }})" style="padding:10px 20px;border-radius:10px;border:none;background:#EF4444;color:white;font-weight:600;cursor:pointer;">
+        <i class="fas fa-flag"></i> إبلاغ
+    </button>
+    <!-- ✅ زر حظر المستخدم -->
+    <button onclick="blockUser({{ profile_user.id }})" style="padding:10px 20px;border-radius:10px;border:none;background:#6B7280;color:white;font-weight:600;cursor:pointer;">
+        <i class="fas fa-ban"></i> حظر
+    </button>
+</div>
+{% endif %}
         </div>
     </div>
 
@@ -124,5 +132,46 @@
     }
 }
 
+// ✅ الإبلاغ عن مستخدم
+async function reportUser(userId) {
+    const reason = prompt('الرجاء كتابة سبب الإبلاغ عن هذا المستخدم:');
+    if (!reason) return;
+    
+    try {
+        const res = await fetch(`/reports/user/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ تم الإبلاغ عن المستخدم بنجاح');
+        } else {
+            showToast('❌ ' + (data.error || 'حدث خطأ'));
+        }
+    } catch(e) {
+        showToast('❌ حدث خطأ في الاتصال');
+    }
+}
+
+// ✅ حظر مستخدم
+async function blockUser(userId) {
+    if (!confirm('هل أنت متأكد من حظر هذا المستخدم؟')) return;
+    
+    try {
+        const res = await fetch(`/reports/block/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ تم حظر المستخدم بنجاح');
+        } else {
+            showToast('❌ ' + (data.error || 'حدث خطأ'));
+        }
+    } catch(e) {
+        showToast('❌ حدث خطأ في الاتصال');
+    }
+}
 </script>
 {% endblock %}

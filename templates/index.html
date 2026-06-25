@@ -112,12 +112,24 @@
     <div class="create-post">
         <img src="{{ user.avatar }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" alt="">
         <input type="text" id="postInput" placeholder="بم تفكر؟" onkeypress="if(event.key==='Enter') createPost()">
-        <div class="actions">
-            <button class="post-btn" onclick="createPost()"><i class="fas fa-pen"></i> نشر</button>
-            <button class="photo-btn" onclick="openMediaPicker('image')"><i class="fas fa-image"></i> صورة</button>
-            <button class="video-btn" onclick="openMediaPicker('video')"><i class="fas fa-video"></i> فيديو</button>
-        </div>
-    </div>
+        <div class="post-actions">
+    <button onclick="toggleLike({{ post.id }})" class="{% if post.liked %}liked{% endif %}">
+        <i class="fas fa-heart"></i> <span id="likeCount-{{ post.id }}">{{ post.likes|length }}</span>
+    </button>
+    <button onclick="toggleComments({{ post.id }})">
+        <i class="fas fa-comment"></i> <span id="commentCount-{{ post.id }}">{{ post.comments|length }}</span>
+    </button>
+    <button onclick="sharePost({{ post.id }})">
+        <i class="fas fa-share"></i> مشاركة
+    </button>
+    <button onclick="window.location.href='/hologram/{{ post.id }}'" class="hologram-btn">
+        <i class="fas fa-cube"></i> 3D
+    </button>
+    <!-- ✅ زر الإبلاغ عن المنشور -->
+    <button onclick="reportPost({{ post.id }})" style="color:#EF4444;">
+        <i class="fas fa-flag"></i> إبلاغ
+    </button>
+</div>
 
     <!-- ✅ فيديوهات مقترحة (تم إضافتها هنا) -->
     {% if suggested_videos %}
@@ -477,6 +489,27 @@
             loadAds();
             setInterval(loadAds, 30000);
         });
+// ✅ الإبلاغ عن منشور
+async function reportPost(postId) {
+    const reason = prompt('الرجاء كتابة سبب الإبلاغ عن هذا المنشور:');
+    if (!reason) return;
+    
+    try {
+        const res = await fetch(`/reports/post/${postId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ تم الإبلاغ عن المنشور بنجاح');
+        } else {
+            showToast('❌ ' + (data.error || 'حدث خطأ'));
+        }
+    } catch(e) {
+        showToast('❌ حدث خطأ في الاتصال');
+    }
+}	
     </script>
 </body>
 </html>
