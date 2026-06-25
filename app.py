@@ -5,6 +5,8 @@ from flask_mail import Mail
 import os
 from models import db, User
 from routes import register_routes
+from news_feeds import start_news_scheduler
+import threading
 
 # ✅ تعريف التطبيق
 app = Flask(__name__)
@@ -74,4 +76,6 @@ if __name__ == '__main__':
     print('👑 admin / admin123')
     print('👤 أي مستخدم: 123456')
     print('='*50 + '\n')
+    # ✅ تشغيل مجدول الأخبار في خيط منفصل
+threading.Thread(target=start_news_scheduler, daemon=True).start()
     app.run(host='0.0.0.0', port=5000, debug=True)
