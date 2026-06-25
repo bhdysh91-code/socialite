@@ -81,7 +81,8 @@
         try {
             const res = await fetch(`/friends/accept/${userId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'  // ✅ مهم للجلسات عبر النطاقات
             });
             const data = await res.json();
             if (data.success) {
@@ -106,7 +107,8 @@
         try {
             const res = await fetch(`/friends/reject/${userId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'  // ✅ مهم للجلسات عبر النطاقات
             });
             const data = await res.json();
             if (data.success) {
@@ -126,7 +128,8 @@
         try {
             const res = await fetch(`/friends/remove/${userId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'  // ✅ مهم للجلسات عبر النطاقات
             });
             const data = await res.json();
             if (data.success) {
@@ -145,7 +148,8 @@
         try {
             const res = await fetch(`/friends/request/${userId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'  // ✅ مهم للجلسات عبر النطاقات
             });
             const data = await res.json();
             if (data.success) {

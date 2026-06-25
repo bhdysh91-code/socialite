@@ -344,16 +344,20 @@
         }
 
         async function toggleLike(postId) {
-            try {
-                const res = await fetch(`/posts/api/like/${postId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-                const data = await res.json();
-                if (data.success) {
-                    const btn = document.querySelector(`#post-${postId} .post-actions button:first-child`);
-                    if (btn) btn.classList.toggle('liked');
-                    document.getElementById(`likeCount-${postId}`).textContent = data.likes_count;
-                }
-            } catch(e) { console.error('Error:', e); }
+    try {
+        const res = await fetch(`/posts/api/like/${postId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'  // ✅ أضف هذا
+        });
+        const data = await res.json();
+        if (data.success) {
+            // ... باقي الكود
         }
+    } catch(e) {
+        console.error('Error:', e);
+    }
+}
 
         function toggleComments(postId) {
             const section = document.getElementById(`comments-${postId}`);

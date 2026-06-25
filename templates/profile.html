@@ -106,22 +106,23 @@
             showToast('❌ حدث خطأ');
         }
     }
-
     async function addFriend(userId) {
-        try {
-            const res = await fetch(`/friends/request/${userId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ ' + data.message);
-            } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
-            }
-        } catch(e) {
-            showToast('❌ حدث خطأ');
+    try {
+        const res = await fetch(`/friends/request/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'  // ✅ أضف هذا
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ ' + data.message);
+        } else {
+            showToast('❌ ' + (data.error || 'حدث خطأ'));
         }
+    } catch(e) {
+        showToast('❌ حدث خطأ');
     }
+}
+
 </script>
 {% endblock %}

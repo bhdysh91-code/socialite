@@ -51,49 +51,39 @@
             t._timeout = setTimeout(() => t.classList.remove('show'), 3000);
         }
     }
-
     async function acceptFriend(userId) {
-        if (!userId || userId == 0) {
-            showToast('❌ خطأ: معرف المستخدم غير صحيح');
-            return;
+    try {
+        const res = await fetch(`/friends/accept/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'  // ✅ أضف هذا
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ ' + data.message);
+            location.reload();
         }
-        try {
-            const res = await fetch(`/friends/accept/${userId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ ' + data.message);
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
-            }
-        } catch(e) {
-            showToast('❌ حدث خطأ في الاتصال');
-        }
+    } catch(e) {
+        showToast('❌ حدث خطأ');
     }
+}
 
-    async function rejectFriend(userId) {
-        if (!userId || userId == 0) {
-            showToast('❌ خطأ: معرف المستخدم غير صحيح');
-            return;
+async function rejectFriend(userId) {
+    try {
+        const res = await fetch(`/friends/reject/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'  // ✅ أضف هذا
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ تم رفض الطلب');
+            location.reload();
         }
-        try {
-            const res = await fetch(`/friends/reject/${userId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ تم رفض الطلب');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
-            }
-        } catch(e) {
-            showToast('❌ حدث خطأ في الاتصال');
-        }
+    } catch(e) {
+        showToast('❌ حدث خطأ');
     }
+}
+
 </script>
 {% endblock %}
