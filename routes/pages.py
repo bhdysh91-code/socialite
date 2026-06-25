@@ -4,23 +4,34 @@ from models import db, Post, User, Article
 from datetime import datetime
 import time
 import requests  # ✅ تأكد من وجود هذا السطر
+from config import YOUTUBE_API_KEY
 
 
 pages_bp = Blueprint('pages', __name__)
-
 @pages_bp.route('/')
 @login_required
 def index():
     posts = Post.query.order_by(Post.created_at.desc()).all()
     
-    # ✅ فيديوهات مقترحة (من يوتيوب)
-    suggested_videos = [
-        {'title': 'فيديو مقترح 1', 'video_id': 'dQw4w9WgXcQ', 'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg'},
-        {'title': 'فيديو مقترح 2', 'video_id': '9bZkp7q19f0', 'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg'},
-        {'title': 'فيديو مقترح 3', 'video_id': 'kJQP7kiw5Fk', 'thumbnail': 'https://img.youtube.com/vi/kJQP7kiw5Fk/hqdefault.jpg'},
-    ]
+    # ✅ جلب فيديوهات حقيقية من يوتيوب (الأكثر مشاهدة في السعودية)
+    suggested_videos = []
+    try:
+        url = f'https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=10&regionCode=SA&key={YOUTUBE_API_KEY}'
+        response = requests.get(url)
+        data = response.json()
+        
+        for item in data.get('items', []):
+            suggested_videos.append({
+                'title': item['snippet']['title'],
+                'video_id': item['id'],
+                'thumbnail': item['snippet']['thumbnails']['medium']['url']
+            })
+    except Exception as e:
+        print(f"خطأ في جلب الفيديوهات: {e}")
+        suggested_videos = []  # إذا فشل، يظهر فارغ
     
     return render_template('index.html', user=current_user, posts=posts, suggested_videos=suggested_videos)
+
 @pages_bp.route('/api/fetch-news-test', methods=['GET'])
 @login_required
 def fetch_news_test():
@@ -130,44 +141,43 @@ def news_feed():
     return render_template('news_feed.html', user=current_user, articles=articles)
 # ================================================================
 # ✅ بحث متقدم (يشمل فيديوهات وأخبار)
-# ================================================================
+
 @pages_bp.route('/search-advanced')
 @login_required
 def search_advanced():
     query = request.args.get('q', '').strip()
-    users = []
-    articles = []
-    web_results = []
     videos = []
-    news = []
-    
+    articles = []
+    users = []
+
     if query:
+        # ✅ بحث في يوتيوب (حقيقي)
+        try:
+            url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video&maxResults=20&key={YOUTUBE_API_KEY}'
+            response = requests.get(url)
+            data = response.json()
+
+            for item in data.get('items', []):
+                videos.append({
+                    'title': item['snippet']['title'],
+                    'description': item['snippet']['description'],
+                    'thumbnail': item['snippet']['thumbnails']['medium']['url'],
+                    'video_id': item['id']['videoId']
+                })
+        except Exception as e:
+            print(f"خطأ في بحث يوتيوب: {e}")
+
         # ✅ بحث داخلي (مستخدمين وأخبار)
         users = User.query.filter(
             (User.username.contains(query)) | (User.full_name.contains(query)),
             User.id != current_user.id
         ).limit(10).all()
-        
+
         articles = Article.query.filter(
             (Article.title.contains(query)) | (Article.description.contains(query))
         ).order_by(Article.published_at.desc()).limit(10).all()
-        
-        # ✅ بحث في Brave (بدون مفتاح - تجريبي)
-        try:
-            url = f'https://api.search.brave.com/res/v1/web/search?q={query}&count=10'
-            response = requests.get(url)
-            data = response.json()
-            
-            for item in data.get('web', {}).get('results', []):
-                web_results.append({
-                    'title': item.get('title', ''),
-                    'description': item.get('description', ''),
-                    'url': item.get('url', '')
-                })
-        except:
-            pass
-    
-    return render_template('search_advanced.html', user=current_user, query=query, users=users, articles=articles, web_results=web_results, videos=videos, news=news)
+
+    return render_template('search_advanced.html', user=current_user, query=query, videos=videos, users=users, articles=articles)
 # ================================================================
 # ✅ API لجلب تفاصيل الخبر
 # ================================================================
