@@ -5,32 +5,43 @@ from flask_mail import Mail
 import os
 from models import db, User
 from routes import register_routes
-from news_feeds import start_news_scheduler
+from news_feeds import start_news_scheduler, set_app_context  # ✅ استيراد
 import threading
+from flask_session import Session
+from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_cors import CORS
+from backup import start_backup_scheduler  # ✅ أضف هذا مع الاستيرادات الأخرى
+from config import Config
 
-# ✅ تعريف التطبيق
+# ✅ تعريف التطبيق أولاً
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret-key-2024'
+app.config.from_object(Config)
 
-# ✅ إعدادات قاعدة البيانات
-db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance', 'socialite.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# ✅ ✅ ✅ تعيين سياق التطبيق (بعد تعريف app مباشرة)
+set_app_context(app)
+# ✅ إعداد الجلسة
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_USE_SIGNER'] = True
+#app.config['SESSION_COOKIE_DOMAIN'] = '.trycloudflare.com'
+#app.config['SESSION_COOKIE_SECURE'] = True
+#app.config['SESSION_COOKIE_HTTPONLY'] = True
+#app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+Session(app)
 
-# ✅ ✅ ✅ إعدادات البريد الإلكتروني (Flask-Mail)
+# ✅ إعدادات البريد الإلكتروني
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'bhdysh91@gmail.com'
-app.config['MAIL_PASSWORD'] = 'nkzawwfwzguurlwv'  # ✅ كلمة مرور التطبيق (بدون مسافات)
+app.config['MAIL_PASSWORD'] = 'nkzawwfwzguurlwv'
 app.config['MAIL_DEFAULT_SENDER'] = 'bhdysh91@gmail.com'
-
-# ✅ تهيئة البريد
 mail = Mail(app)
 
-# ✅ إنشاء مجلد instance إن لم يكن موجوداً
-os.makedirs(os.path.dirname(db_path), exist_ok=True)
+# ✅ ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+# ✅ إنشاء مجلد instance
 db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'auth.login'
@@ -45,7 +56,6 @@ register_routes(app)
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # ✅ إنشاء مستخدمين افتراضيين (إذا كانت قاعدة البيانات فارغة)
         if User.query.count() == 0:
             users = [
                 ('admin', 'admin@socialite.local', 'مدير النظام', 'admin123', True),
@@ -76,6 +86,10 @@ if __name__ == '__main__':
     print('👑 admin / admin123')
     print('👤 أي مستخدم: 123456')
     print('='*50 + '\n')
-    # ✅ تشغيل مجدول الأخبار في خيط منفصل
-threading.Thread(target=start_news_scheduler, daemon=True).start()
+    
+    # ✅ تشغيل مجدول الأخبار
+    # ✅ تشغيل مجدول النسخ الاحتياطي
+    threading.Thread(target=start_backup_scheduler, daemon=True).start()
+    threading.Thread(target=start_news_scheduler, daemon=True).start()
+    
     app.run(host='0.0.0.0', port=5000, debug=True)

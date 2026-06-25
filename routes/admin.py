@@ -5,6 +5,15 @@ from datetime import datetime
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
+def super_admin_required(f):
+    """ديكوراتور للتحقق من أن المستخدم هو المدير الرئيسي"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_super_admin:
+            flash('❌ غير مصرح', 'danger')
+            return redirect(url_for('pages.index'))
+        return f(*args, **kwargs)
+    return decorated_function
 # ✅ التحقق من صلاحيات المالك
 def admin_required():
     if not current_user.is_authenticated or not current_user.is_admin:

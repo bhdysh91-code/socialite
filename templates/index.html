@@ -88,6 +88,10 @@
         #videoModal .close-btn{position:absolute;top:20px;right:20px;background:red;color:white;border:none;border-radius:50%;width:50px;height:50px;font-size:24px;cursor:pointer;z-index:10000}
         #videoModal .video-wrapper{width:100%;max-width:800px;background:black;border-radius:12px;overflow:hidden;position:relative}
         #videoModal .video-wrapper iframe{width:100%;height:60vh;border:none}
+
+        /* ✅ زر الإبلاغ */
+        .report-btn{color:#EF4444 !important}
+        .report-btn:hover{background:#3D1A1A !important;color:#EF4444 !important}
     </style>
 </head>
 <body>
@@ -112,26 +116,14 @@
     <div class="create-post">
         <img src="{{ user.avatar }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" alt="">
         <input type="text" id="postInput" placeholder="بم تفكر؟" onkeypress="if(event.key==='Enter') createPost()">
-        <div class="post-actions">
-    <button onclick="toggleLike({{ post.id }})" class="{% if post.liked %}liked{% endif %}">
-        <i class="fas fa-heart"></i> <span id="likeCount-{{ post.id }}">{{ post.likes|length }}</span>
-    </button>
-    <button onclick="toggleComments({{ post.id }})">
-        <i class="fas fa-comment"></i> <span id="commentCount-{{ post.id }}">{{ post.comments|length }}</span>
-    </button>
-    <button onclick="sharePost({{ post.id }})">
-        <i class="fas fa-share"></i> مشاركة
-    </button>
-    <button onclick="window.location.href='/hologram/{{ post.id }}'" class="hologram-btn">
-        <i class="fas fa-cube"></i> 3D
-    </button>
-    <!-- ✅ زر الإبلاغ عن المنشور -->
-    <button onclick="reportPost({{ post.id }})" style="color:#EF4444;">
-        <i class="fas fa-flag"></i> إبلاغ
-    </button>
-</div>
+        <div class="actions">
+            <button class="post-btn" onclick="createPost()"><i class="fas fa-pen"></i> نشر</button>
+            <button class="photo-btn" onclick="openMediaPicker('image')"><i class="fas fa-image"></i> صورة</button>
+            <button class="video-btn" onclick="openMediaPicker('video')"><i class="fas fa-video"></i> فيديو</button>
+        </div>
+    </div>
 
-    <!-- ✅ فيديوهات مقترحة (تم إضافتها هنا) -->
+    <!-- ✅ فيديوهات مقترحة -->
     {% if suggested_videos %}
     <div class="suggested-videos">
         <div class="header">
@@ -191,6 +183,10 @@
                     </button>
                     <button onclick="window.location.href='/hologram/{{ post.id }}'" class="hologram-btn">
                         <i class="fas fa-cube"></i> 3D
+                    </button>
+                    <!-- ✅ زر الإبلاغ عن المنشور -->
+                    <button onclick="reportPost({{ post.id }})" class="report-btn">
+                        <i class="fas fa-flag"></i> إبلاغ
                     </button>
                 </div>
             </div>
@@ -356,20 +352,22 @@
         }
 
         async function toggleLike(postId) {
-    try {
-        const res = await fetch(`/posts/api/like/${postId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include'  // ✅ أضف هذا
-        });
-        const data = await res.json();
-        if (data.success) {
-            // ... باقي الكود
+            try {
+                const res = await fetch(`/posts/api/like/${postId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const btn = document.querySelector(`#post-${postId} .post-actions button:first-child`);
+                    if (btn) btn.classList.toggle('liked');
+                    document.getElementById(`likeCount-${postId}`).textContent = data.likes_count;
+                }
+            } catch(e) {
+                console.error('Error:', e);
+            }
         }
-    } catch(e) {
-        console.error('Error:', e);
-    }
-}
 
         function toggleComments(postId) {
             const section = document.getElementById(`comments-${postId}`);
@@ -390,10 +388,10 @@
             const modal = document.getElementById('videoModal');
             const player = document.getElementById('videoPlayer');
             player.innerHTML = `
-                <iframe 
-                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
-                    style="width:100%;height:60vh;border:none;" 
-                    allow="autoplay; encrypted-media" 
+                <iframe
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0"
+                    style="width:100%;height:60vh;border:none;"
+                    allow="autoplay; encrypted-media"
                     allowfullscreen>
                 </iframe>
             `;
@@ -482,23 +480,18 @@
         }
 
         // ================================================================
-        // ✅ بدء التشغيل
+        // ✅ الإبلاغ عن منشور
         // ================================================================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 تحميل الصفحة الرئيسية...');
-            loadAds();
-            setInterval(loadAds, 30000);
-        });
-// ✅ الإبلاغ عن منشور
 async function reportPost(postId) {
     const reason = prompt('الرجاء كتابة سبب الإبلاغ عن هذا المنشور:');
     if (!reason) return;
-    
+
     try {
         const res = await fetch(`/reports/post/${postId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: reason })
+            body: JSON.stringify({ reason: reason }),
+            credentials: 'include'  // ✅ أضف هذا
         });
         const data = await res.json();
         if (data.success) {
@@ -507,9 +500,19 @@ async function reportPost(postId) {
             showToast('❌ ' + (data.error || 'حدث خطأ'));
         }
     } catch(e) {
+        console.error('Error:', e);
         showToast('❌ حدث خطأ في الاتصال');
     }
-}	
+}
+
+        // ================================================================
+        // ✅ بدء التشغيل
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 تحميل الصفحة الرئيسية...');
+            loadAds();
+            setInterval(loadAds, 30000);
+        });
     </script>
 </body>
 </html>

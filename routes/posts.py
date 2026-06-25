@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from utils.nsfw_checker import check_nsfw_text, check_nsfw_image, log_nsfw_content
 from flask_login import login_required, current_user
 from models import db, Post
 import base64
@@ -19,7 +20,6 @@ def api_get_posts():
         'user_avatar': p.author.avatar,
         'created_at': p.created_at.isoformat()
     } for p in posts])
-
 @posts_bp.route('/api/posts', methods=['POST'])
 @login_required
 def api_create_post():
@@ -28,37 +28,27 @@ def api_create_post():
         text = data.get('text', '').strip()
         image_data = data.get('image')
         video_data = data.get('video')
-        image_path = None
-        video_path = None
         
-        if image_data:
-            if ',' in image_data:
-                image_data = image_data.split(',')[1]
-            image_bytes = base64.b64decode(image_data)
-            filename = f"post_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{current_user.id}.jpg"
-            filepath = os.path.join('static/uploads/posts', filename)
-            with open(filepath, 'wb') as f:
-                f.write(image_bytes)
-            image_path = f'/static/uploads/posts/{filename}'
+        # ✅ ✅ ✅ فلترة المحتوى الإباحي
+        if text and check_nsfw_text(text):
+            log_nsfw_content('نص', current_user.id, f'نص إباحي: {text[:50]}')
+            return jsonify({'error': '❌ المحتوى غير مسموح به (يحتوي على كلمات ممنوعة)'}), 403
         
-        if video_data:
-            if ',' in video_data:
-                video_data = video_data.split(',')[1]
-            video_bytes = base64.b64decode(video_data)
-            filename = f"video_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{current_user.id}.mp4"
-            filepath = os.path.join('static/uploads/posts', filename)
-            with open(filepath, 'wb') as f:
-                f.write(video_bytes)
-            video_path = f'/static/uploads/posts/{filename}'
+        # ... باقي الكود (حفظ الصورة والفيديو)
         
-        post = Post(
-            user_id=current_user.id,
-            text=text or '📸 محتوى جديد',
-            image=image_path,
-            created_at=datetime.utcnow()
-        )
+        # ✅ فلترة الصورة بعد الحفظ (اختياري)
+        if image_path and check_nsfw_image(image_path):
+            # حذف الصورة
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            log_nsfw_content('صورة', current_user.id, 'صورة إباحية')
+            return jsonify({'error': '❌ الصورة غير مسموح بها'}), 403
+        
+        # ... حفظ المنشور
+        post = Post(...)
         db.session.add(post)
         db.session.commit()
         return jsonify(post.to_dict(current_user.id))
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500

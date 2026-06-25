@@ -77,90 +77,70 @@
     }
 
     // ✅ قبول طلب صداقة
-    async function acceptFriend(userId) {
-        try {
-            const res = await fetch(`/friends/accept/${userId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'  // ✅ مهم للجلسات عبر النطاقات
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ ' + data.message);
-                if (data.chat_url) {
-                    setTimeout(() => {
-                        window.location.href = data.chat_url;
-                    }, 1000);
-                } else {
-                    location.reload();
-                }
+    // ✅ قبول طلب صداقة
+async function acceptFriend(userId) {
+    try {
+        const res = await fetch(`/friends/accept/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'  // ✅ مهم جداً
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ ' + data.message);
+            if (data.chat_url) {
+                setTimeout(() => {
+                    window.location.href = data.chat_url;
+                }, 1000);
             } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
-            }
-        } catch(e) {
-            showToast('❌ حدث خطأ');
-        }
-    }
-
-    // ✅ رفض طلب صداقة
-    async function rejectFriend(userId) {
-        try {
-            const res = await fetch(`/friends/reject/${userId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'  // ✅ مهم للجلسات عبر النطاقات
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ تم رفض الطلب');
                 location.reload();
-            } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
             }
-        } catch(e) {
-            showToast('❌ حدث خطأ');
+        } else {
+            showToast('❌ ' + (data.error || 'حدث خطأ'));
         }
+    } catch(e) {
+        showToast('❌ حدث خطأ');
     }
+}
 
-    // ✅ إزالة صديق
-    async function removeFriend(userId) {
-        if (!confirm('هل أنت متأكد من إزالة هذا الصديق؟')) return;
-        try {
-            const res = await fetch(`/friends/remove/${userId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'  // ✅ مهم للجلسات عبر النطاقات
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ ' + data.message);
-                location.reload();
-            } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
-            }
-        } catch(e) {
-            showToast('❌ حدث خطأ');
+// ✅ رفض طلب صداقة
+async function rejectFriend(userId) {
+    try {
+        const res = await fetch(`/friends/reject/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'  // ✅ مهم جداً
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ تم رفض الطلب');
+            location.reload();
+        } else {
+            showToast('❌ ' + (data.error || 'حدث خطأ'));
         }
+    } catch(e) {
+        showToast('❌ حدث خطأ');
     }
+}
 
-    // ✅ إرسال طلب صداقة
-    async function addFriend(userId) {
-        try {
-            const res = await fetch(`/friends/request/${userId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include'  // ✅ مهم للجلسات عبر النطاقات
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast('✅ ' + data.message);
-                location.reload();
-            } else {
-                showToast('❌ ' + (data.error || 'حدث خطأ'));
-            }
-        } catch(e) {
-            showToast('❌ حدث خطأ');
+// ✅ إرسال طلب صداقة
+async function addFriend(userId) {
+    try {
+        const res = await fetch(`/friends/request/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'  // ✅ مهم جداً
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('✅ ' + data.message);
+            location.reload();
+        } else {
+            showToast('❌ ' + (data.error || 'حدث خطأ'));
         }
+    } catch(e) {
+        showToast('❌ حدث خطأ');
     }
+}
 </script>
 {% endblock %}

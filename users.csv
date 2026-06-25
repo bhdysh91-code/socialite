@@ -1,0 +1,11 @@
+id,username,email,password,full_name,avatar,online,is_admin,is_banned,verified,reset_token,reset_token_expiry,encryption_enabled,created_at
+1,admin,admin@socialite.local,pbkdf2:sha256:260000$oJDD4oZWWwohKFUo$9d8f341950c8622b72b0dd8a5adc46a9f56aa0156fc4425766dbb27a91bef469,"مدير النظام",https://i.pravatar.cc/150?img=5,0,1,0,0,,,0,"2026-06-25 08:33:31.719026"
+2,ahmed,ahmed@example.com,pbkdf2:sha256:260000$wzAd2v6M9qNilx2f$4ce079179a0b396fd37777bc2a8d7c3ee041ca2681e72883eaba8e3e81134f0b,"أحمد",https://i.pravatar.cc/150?img=5,0,0,0,0,,,0,"2026-06-25 08:33:31.719065"
+3,sara,sara@example.com,pbkdf2:sha256:260000$i8NIx23zAmZOExsM$80ec81d91eda600bd47ea2ff3ed090ec4270f1a97697ee9ac8d8c3c924c1ad35,"سارة",https://i.pravatar.cc/150?img=5,0,0,0,0,,,0,"2026-06-25 08:33:31.719086"
+4,mohammed,mohammed@example.com,pbkdf2:sha256:260000$J0APL7ZwHTKegTXz$f70d1e1817134c9b92b6f4a77813b5838a5ed8e32485e54b3cbabb400c946680,"محمد",https://i.pravatar.cc/150?img=5,0,0,0,0,,,0,"2026-06-25 08:33:31.719105"
+5,raneem,raneem@example.com,pbkdf2:sha256:260000$mOUI8PngUL6CHplo$15e8d29c830d7b021249baba061e0f8c4d80c4fa7a40d4e27a35c4d1acee3eb1,Raneem,https://i.pravatar.cc/150?img=5,0,0,0,0,,,0,"2026-06-25 08:33:31.719125"
+6,Abdulmalk@77,hamadmhdybbz1@gmail.com,pbkdf2:sha256:260000$cNCS6fpD8m2nJWc3$2f35a67f4f9d301464d6e78679ba6adab9b66513a2eedd02653308a0e87025ab,"عبدالملك هديش",https://i.pravatar.cc/150?img=15,1,0,0,1,,,1,"2026-06-25 08:34:57.675540"
+7,abunahee,bhdysh91@gmail.com,pbkdf2:sha256:260000$dteOYbAeYbjoJFR8$d5fd48f83de3928a2f007949e7ffb47645c4d765e6c46a20816e8c97e089a495,"ابو ناهي",https://i.pravatar.cc/150?img=16,1,0,0,0,,,0,"2026-06-25 09:29:16.475721"
+8,"نعيم",wrwra112233@gmail.com,pbkdf2:sha256:260000$KK636423SGS2qz4D$02c134a73f0a7353481baef2dfc6318007d6bd56e5c6e7609f5203d88e70b5f6,"ابو",https://i.pravatar.cc/150?img=17,1,0,0,0,,,0,"2026-06-25 09:36:03.487162"
+9,Solayman@,shshdhy2@gmali.com,pbkdf2:sha256:260000$WUvDvizUpwDNnkRc$cf33018daf8a117900fbaf9646925073ea3e0f10003c5608678366046dc501b0,"سليمان ",https://i.pravatar.cc/150?img=18,0,0,0,0,,,0,"2026-06-25 12:48:18.344872"
+10,Abdulmajeed@,hamadmhdy119@gmail.com,pbkdf2:sha256:260000$7bDRm1Np8YGLtWkH$cc319e6cf7e4528e362123b7cd91bb200d27e71b3bfb582895b43fdd7aa8ecd1,"عبدالمجيد",https://i.pravatar.cc/150?img=12,0,1,0,1,,,1,"2026-06-25 16:49:54"

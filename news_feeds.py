@@ -5,7 +5,7 @@ from models import db, Article
 import schedule
 import time
 
-# ✅ قائمة مصادر RSS
+# ✅ قائمة مصادر RSS (عربية فقط)
 RSS_SOURCES = [
     'https://www.aljazeera.net/feed/rss',
     'https://www.alarabiya.net/feed/rss',
@@ -17,44 +17,61 @@ RSS_SOURCES = [
     'https://www.egypttoday.com/feed',
     'https://www.kooora.com/rss.aspx',
     'https://www.yallakora.com/rss',
+    'https://www.sabq.org/rss.xml',
+    'https://www.okaz.com.sa/rss.xml',
+    'https://www.almowaten.net/feed',
+    'https://www.alroeya.com/rss',
 ]
 
-def fetch_rss_news():
-    """جلب الأخبار من جميع مصادر RSS (مع مهلة زمنية)"""
-    count = 0
-    for source in RSS_SOURCES:
-        try:
-            # ✅ استخدم requests للحصول على المحتوى مع مهلة زمنية
-            response = requests.get(source, timeout=10)
-            feed = feedparser.parse(response.content)
-            
-            for entry in feed.entries[:5]:
-                existing = Article.query.filter_by(link=entry.link).first()
-                if not existing:
-                    article = Article(
-                        title=entry.title,
-                        description=entry.description[:300] if hasattr(entry, 'description') else '',
-                        link=entry.link,
-                        source=feed.feed.title if hasattr(feed, 'feed') and hasattr(feed.feed, 'title') else source,
-                        image_url=entry.get('media_content', [{}])[0].get('url') if hasattr(entry, 'media_content') else None,
-                        published_at=datetime.fromtimestamp(time.mktime(entry.published_parsed)) if hasattr(entry, 'published_parsed') else datetime.utcnow()
-                    )
-                    db.session.add(article)
-                    count += 1
-        except requests.exceptions.Timeout:
-            print(f"⏰ مهلة زمنية لتجاوز المصدر: {source}")
-        except Exception as e:
-            print(f"❌ خطأ في {source}: {e}")
-    
-    db.session.commit()
-    print(f"✅ تم جلب {count} خبر جديد")
+# ✅ متغير لتخزين سياق التطبيق
+_app_context = None
 
-# ✅ جدولة التحديث كل 5 دقائق
-schedule.every(5).minutes.do(fetch_rss_news)
+def set_app_context(app):
+    """تعيين سياق التطبيق"""
+    global _app_context
+    _app_context = app.app_context()
+
+def fetch_rss_news():
+    """جلب الأخبار من جميع مصادر RSS (عربية فقط)"""
+    global _app_context
+    if _app_context is None:
+        print("❌ سياق التطبيق غير معين")
+        return
+
+    with _app_context:
+        count = 0
+        for source in RSS_SOURCES:
+            try:
+                response = requests.get(source, timeout=10)
+                feed = feedparser.parse(response.content)
+
+                for entry in feed.entries[:5]:
+                    existing = Article.query.filter_by(link=entry.link).first()
+                    if not existing:
+                        article = Article(
+                            title=entry.title,
+                            description=entry.description[:300] if hasattr(entry, 'description') else '',
+                            link=entry.link,
+                            source=feed.feed.title if hasattr(feed, 'feed') and hasattr(feed.feed, 'title') else source,
+                            image_url=entry.get('media_content', [{}])[0].get('url') if hasattr(entry, 'media_content') else None,
+                            published_at=datetime.fromtimestamp(time.mktime(entry.published_parsed)) if hasattr(entry, 'published_parsed') else datetime.utcnow()
+                        )
+                        db.session.add(article)
+                        count += 1
+            except requests.exceptions.Timeout:
+                print(f"⏰ مهلة زمنية لتجاوز المصدر: {source}")
+            except Exception as e:
+                print(f"❌ خطأ في {source}: {e}")
+
+        db.session.commit()
+        print(f"✅ تم جلب {count} خبر عربي جديد")
+
+# ✅ جدولة التحديث كل دقيقتين (بدلاً من 5 دقائق)
+schedule.every(2).minutes.do(fetch_rss_news)
 
 # ✅ تشغيل المهمة في الخلفية
 def start_news_scheduler():
-    print("🚀 بدء تشغيل مجدول الأخبار (كل 5 دقائق)")
+    print("🚀 بدء تشغيل مجدول الأخبار (كل دقيقتين)")
     while True:
         schedule.run_pending()
         time.sleep(1)

@@ -8,6 +8,7 @@ db = SQLAlchemy()
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
+    is_super_admin = db.Column(db.Boolean, default=False)  # ✅ حساب المدير الرئيسي
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
@@ -246,3 +247,55 @@ class Call(db.Model):
             'duration': self.duration,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+# ================================================================
+# نموذج المقالات (Articles) - للمحتوى الخارجي
+# ================================================================
+
+class Article(db.Model):
+    __tablename__ = 'articles'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(300), nullable=False)
+    description = db.Column(db.Text)
+    link = db.Column(db.String(500), unique=True)  # منع التكرار
+    source = db.Column(db.String(100))  # مصدر الخبر (BBC, CNN, إلخ)
+    image_url = db.Column(db.String(500))
+    published_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'link': self.link,
+            'source': self.source,
+            'image_url': self.image_url,
+            'published_at': self.published_at.isoformat() if self.published_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+# ================================================================
+# نموذج الإبلاغ (Reports)
+# ================================================================
+
+class Report(db.Model):
+    __tablename__ = 'reports'
+    id = db.Column(db.Integer, primary_key=True)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    reported_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=True)
+    type = db.Column(db.String(50), nullable=False)  # 'user', 'post'
+    reason = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'reviewed', 'resolved'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ================================================================
+# نموذج الحظر (Blocks)
+# ================================================================
+
+class Block(db.Model):
+    __tablename__ = 'blocks'
+    id = db.Column(db.Integer, primary_key=True)
+    blocker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    blocked_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('blocker_id', 'blocked_id', name='unique_block'),)

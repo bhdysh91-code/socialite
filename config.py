@@ -4,8 +4,10 @@ from datetime import timedelta
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-2024'
 
-    # قاعدة البيانات
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///instance/facebook.db'
+    # ✅ PostgreSQL (للإنتاج)
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'postgresql:///socialite_db'  # ✅ استخدم هذا السطر
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # البريد
