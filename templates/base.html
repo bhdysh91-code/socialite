@@ -5,27 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Socialite - {% block title %}الرئيسية{% endblock %}</title>
     <!-- ✅ PWA / تطبيق Android -->
-<link rel="manifest" href="/static/manifest.json">
-<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#8B5CF6">
-
-<!-- ✅ Service Worker -->
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/static/sw.js')
-                .then(function(registration) {
-                    console.log('✅ Service Worker مسجل بنجاح:', registration);
-                })
-                .catch(function(error) {
-                    console.log('❌ فشل تسجيل Service Worker:', error);
-                });
-        });
-    }
-</script>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#8B5CF6">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src *; media-src *;">
+    <!-- ✅ Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(function(registration) {
+                        console.log('✅ Service Worker مسجل بنجاح:', registration);
+                    })
+                    .catch(function(error) {
+                        console.log('❌ فشل تسجيل Service Worker:', error);
+                    });
+            });
+        }
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -34,15 +34,16 @@
         .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#1A1A2E;color:#fff;padding:10px 24px;border-radius:30px;font-size:14px;border:1px solid #2D2D44;opacity:0;transition:all 0.3s;z-index:999;pointer-events:none}
         .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
-        .bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:600px;margin:0 auto;background:#1A1A2E;border-top:1px solid #2D2D44;display:flex;justify-content:space-around;padding:8px 0 12px;z-index:100}
-        .bottom-nav a{color:#A0A0B0;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;padding:4px 8px;transition:all 0.3s}
-        .bottom-nav a.active{color:#8B5CF6}
+        /* ✅ الشريط السفلي المحدّث */
+        .bottom-nav{display:flex;justify-content:space-around;padding:8px 0;background:#1A1A2E;border-top:1px solid #2D2D44;position:fixed;bottom:0;left:0;right:0;max-width:600px;margin:0 auto;z-index:100}
+        .bottom-nav a{color:#A0A0B0;text-decoration:none;display:flex;flex-direction:column;align-items:center;font-size:11px;transition:all 0.3s;padding:4px 8px}
         .bottom-nav a i{font-size:22px}
+        .bottom-nav a.active{color:#8B5CF6}
         .bottom-nav .camera i{font-size:32px;color:#8B5CF6}
         .bottom-nav a:hover{color:#8B5CF6}
 
         .header-actions{display:flex;align-items:center;gap:12px}
-        .header-actions a{color:#A0A0B0;text-decoration:none;font-size:18px}
+        .header-actions a{color:#A0A0B0;text-decoration:none;font-size:18px;position:relative}
         .logout-btn{color:#EF4444;font-size:13px;text-decoration:none;background:none;border:none;cursor:pointer}
 
         .encryption-bar{background:#1A1A2E;border-bottom:1px solid #2D2D44;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
@@ -61,12 +62,33 @@
         #incomingCallModal.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        
+
         /* ✅ شريط لوحة التحكم للمالك */
         .admin-bar{background:#1A1A2E;border-bottom:1px solid #2D2D44;padding:6px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
         .admin-bar a{color:#8B5CF6;text-decoration:none;font-size:13px;font-weight:600;padding:4px 12px;border-radius:8px;transition:all 0.3s}
         .admin-bar a:hover{background:#2D2D44}
         .admin-bar .admin-icon{color:#F59E0B;margin-left:4px}
+
+        /* ✅ شريط التنقل العلوي الإضافي */
+        .top-nav{display:flex;justify-content:space-around;background:#1A1A2E;padding:8px 0;border-bottom:1px solid #2D2D44;margin-bottom:8px;flex-wrap:wrap}
+        .top-nav a{color:#A0A0B0;text-decoration:none;font-size:14px;display:flex;align-items:center;gap:4px;transition:all 0.3s}
+        .top-nav a:hover{color:#8B5CF6}
+
+        /* ✅ العلامات (Badges) */
+        .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #EF4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            display: none;
+            min-width: 18px;
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -79,7 +101,7 @@
         </button>
     </div>
     {% endif %}
-    
+
     <!-- ✅ شريط لوحة التحكم (للمالك فقط) -->
     {% if user.is_authenticated and user.is_admin %}
     <div class="admin-bar">
@@ -91,22 +113,40 @@
     </div>
     {% endif %}
 
+    <!-- ✅ شريط التنقل العلوي الإضافي -->
+    {% if user.is_authenticated %}
+    <div class="top-nav">
+        <a href="{{ url_for('pages.news_feed') }}">
+            <i class="fas fa-newspaper"></i> أخبار
+        </a>
+        <a href="{{ url_for('videos.videos_page') }}">
+            <i class="fas fa-video"></i> فيديوهات
+        </a>
+        <a href="{{ url_for('pages.search_advanced') }}">
+            <i class="fas fa-search"></i> بحث
+        </a>
+        <a href="{{ url_for('pages.stories') }}">
+            <i class="fas fa-circle-play"></i> قصص
+        </a>
+    </div>
+    {% endif %}
+
     <div class="main-content">
         {% block content %}{% endblock %}
     </div>
 
+    <!-- ✅ الشريط السفلي المحدّث مع العلامات -->
     <nav class="bottom-nav">
         <a href="{{ url_for('pages.index') }}" class="{% if request.endpoint == 'pages.index' %}active{% endif %}">
             <i class="fas fa-home"></i> الرئيسية
         </a>
-        <a href="{{ url_for('pages.stories') }}" class="{% if request.endpoint == 'pages.stories' %}active{% endif %}">
-            <i class="fas fa-circle-play"></i> قصص
+        <a href="{{ url_for('messages.messages') }}" class="{% if request.endpoint == 'messages.messages' %}active{% endif %}" style="position:relative;">
+            <i class="fas fa-comment-dots"></i>
+            <span class="badge" id="msgBadge">0</span>
+            رسائل
         </a>
         <a href="{{ url_for('pages.camera') }}" class="camera {% if request.endpoint == 'pages.camera' %}active{% endif %}">
             <i class="fas fa-plus-circle"></i>
-        </a>
-        <a href="{{ url_for('messages.messages') }}" class="{% if request.endpoint == 'messages.messages' %}active{% endif %}">
-            <i class="fas fa-comment-dots"></i> رسائل
         </a>
         <a href="{{ url_for('profile.profile') }}" class="{% if request.endpoint == 'profile.profile' %}active{% endif %}">
             <i class="fas fa-user"></i> الملف
@@ -172,7 +212,7 @@
 
         function checkIncomingCall() {
             {% if user.is_authenticated %}
-            fetch('/calls/api/check/{{ user.id }}')
+            fetch('/calls/api/check/{{ user.id }}', { credentials: 'include' })
             .then(res => res.json())
             .then(data => {
                 if (data.has_call && !isCallActive) {
@@ -202,7 +242,8 @@
             try {
                 const res = await fetch(`/calls/api/${currentCallId}/accept`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -222,7 +263,8 @@
             try {
                 await fetch(`/calls/api/${currentCallId}/reject`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
                 });
                 document.getElementById('incomingCallModal').classList.remove('active');
                 if (ringtone) ringtone.pause();
@@ -234,7 +276,60 @@
             }
         }
 
+        // ================================================================
+        // ✅ جلب عدد الإشعارات غير المقروءة
+        // ================================================================
+        async function fetchNotificationCount() {
+            try {
+                const res = await fetch('/api/notifications/count', {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                const badge = document.getElementById('notifBadge');
+                if (badge) {
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch(e) {
+                console.error('خطأ في جلب الإشعارات:', e);
+            }
+        }
+
+        // ✅ جلب عدد الرسائل غير المقروءة
+        async function fetchMessageCount() {
+            try {
+                const res = await fetch('/api/messages/unread/count', {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                const badge = document.getElementById('msgBadge');
+                if (badge) {
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch(e) {
+                console.error('خطأ في جلب الرسائل:', e);
+            }
+        }
+
+        // ✅ تحديث الإشعارات كل 30 ثانية
+        setInterval(() => {
+            fetchNotificationCount();
+            fetchMessageCount();
+        }, 30000);
+
+        // ✅ عند تحميل الصفحة
         document.addEventListener('DOMContentLoaded', function() {
+            fetchNotificationCount();
+            fetchMessageCount();
             callCheckInterval = setInterval(checkIncomingCall, 3000);
         });
 
