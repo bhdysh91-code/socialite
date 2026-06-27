@@ -5,7 +5,7 @@ from flask_mail import Mail
 import os
 from models import db, User
 from routes import register_routes
-from news_feeds import start_news_scheduler, set_app_context  # ✅ استيراد
+from news_feeds import start_news_scheduler  # ✅ استيراد فقط
 import threading
 from flask_session import Session
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -18,7 +18,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # ✅ ✅ ✅ تعيين سياق التطبيق (بعد تعريف app مباشرة)
-set_app_context(app)
+#set_app_context(app)
 # ✅ إعداد الجلسة
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
